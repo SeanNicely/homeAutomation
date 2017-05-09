@@ -1,0 +1,75 @@
+var getDiscrete = function(body, action){
+  action = action.toLowerCase().replace(/\s/g,"");
+  switch (action) {
+    case "on":
+      body.on = true;
+      break;
+    case "off":
+      body.on = false;
+      break;
+    default:
+      body.xy = getColor(action);
+  }
+  return body;
+}
+
+var getContinuous = function(body, action, percentage) {
+  percentage = parseInt(percentage);
+  switch (action) {
+    case "brightness":
+      percentage = Math.floor(255*percentage/100);
+      body["bri"] = percentage;
+      break;
+    case "temperature":
+      percentage = Math.floor(347*percentage/100 + 153);
+      body["ct"] = percentage;
+      break;
+    case "saturation":
+      percentage = Math.floor(255*percentage/100);
+      body["sat"] = percentage;
+      break;
+  }
+  return body;
+}
+
+var getCurrentState = function(lights) {
+    var states = {};
+    
+    lights.forEach(function(light){
+        var url = "http://192.168.1.190/api/uDe4zdFPK-kklfaxTh3RFG6Kwe4EDyiSxwjXB5eg/lights/" + light;
+        states[light] = JSON.parse(httpGet(url));
+    });
+    return states;
+}
+
+var setOnStatus = function(body, lights) {
+    var currentStates = getCurrentState(lights);
+    for (var light in currentStates){
+        lightState = currentStates[light].state;
+        if (!lightState.on) body.on = true;
+    }
+    return body;
+}
+
+function main() {
+  var urlInfo = {};
+  var body = {};
+  
+  if (typeof scene !== "undefined") {
+    //TODO
+    /*
+      urlInfo.type = "scene";
+    */
+  }
+  else {
+    urlInfo.lights = getLights(room);
+    body = setOnStatus(body, urlInfo.lights);
+    body = typeof percentage !== "undefined" ? getContinuous(body, action, percentage) : getDiscrete(body, action);
+    console.log(body);
+    urlInfo.type = "lights";
+    urlInfo.modifier = "state";
+    urlInfo.httpMethod = "PUT";
+  }
+  
+  hueAPI(urlInfo, body);
+}

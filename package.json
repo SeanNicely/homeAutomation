@@ -1,0 +1,19 @@
+{
+  "name": "homeautomation",
+  "version": "1.0.0",
+  "description": "Automation hub for Philips Hue lights and other various smart-home tasks",
+  "main": "main.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "keywords": [
+    "npm"
+  ],
+  "author": "Sean Nicely <snicely93@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "concat-stream": "^1.6.0",
+    "express": "^4.15.2",
+    "mongodb": "^2.2.26"
+  }
+}
