@@ -93,18 +93,18 @@ var setOnStatus = function(light, body) {
     return promise;
 }
 
-var setLightsStates = function(lights, options, body) {
-	var basePath = options.path;
-	lights.forEach(light => {
-
-    	options.path = basePath + light + "/state/";
-    	let response = httpRequest(options, body);
+var setLightState = function(lights, body) {
+	let promise = new Promise((resolve,reject) => {
+		let options = new Options("PUT", light+"/state/")
+    	httpRequest(options, body)
+    	.then(response => resolve(response));
   	});
+  	return promise;
 }
 
 var exports = module.exports = {
 	httpRequest,
-	setLightsStates,
+	setLightState,
 	getCurrentStates,
 	getCurrentState,
 	Options,
