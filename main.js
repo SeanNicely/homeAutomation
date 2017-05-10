@@ -36,9 +36,9 @@ app.post('/', function (req, res) {
 });
 
 lights = [1,2,4];
-options = new hueApi.Options("GET");
-hueApi.getCurrentState(lights).then(function(states) {
-	console.log("Final output: " + JSON.stringify(states[0]));
+body = {};
+hueApi.getCurrentStates(lights).then(function(states) {
+	console.log("Final output: " + JSON.stringify(states));
 })
 //body = {"on":true};
 //hueApi.setLightsStates(lights, options, body)

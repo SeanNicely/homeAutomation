@@ -21,6 +21,12 @@ var httpRequest = function (options, body) {
 	return promise;
 }
 
+var Options = function(method, pathExtension) {
+	this.host = "192.168.1.190",
+	this.path = "/api/uDe4zdFPK-kklfaxTh3RFG6Kwe4EDyiSxwjXB5eg/lights/" + pathExtension,
+	this.method = method
+}
+
 var getLights = function(room) {
   var lights;
   
@@ -39,14 +45,11 @@ var getLights = function(room) {
   return lights;
 }
 
-var getCurrentState = function(lights) {
-    var options = new Options("GET");
-    var basePath = options.path;
+var getCurrentStates = function(lights) {
     var lightQueue = [];
 
     lights.forEach(function(light) {
-    	options.path = basePath + light;
-    	lightQueue.push(httpRequest(options));
+    	lightQueue.push(getCurrentState(light));
     });
     
     var promise = new Promise(function(resolve, reject){
@@ -58,10 +61,45 @@ var getCurrentState = function(lights) {
 	return promise;
 }
 
-var Options = function(method) {
-	this.host = "192.168.1.190",
-	this.path = "/api/uDe4zdFPK-kklfaxTh3RFG6Kwe4EDyiSxwjXB5eg/lights/",
-	this.method = method
+var getContinuous = function(body, action, percentage) {
+  percentage = parseInt(percentage);
+  switch (action) {
+    case "brightness":
+      percentage = Math.floor(255*percentage/100);
+      body["bri"] = percentage;
+      break;
+    case "temperature":
+      percentage = Math.floor(347*percentage/100 + 153);
+      body["ct"] = percentage;
+      break;
+    case "saturation":
+      percentage = Math.floor(255*percentage/100);
+      body["sat"] = percentage;
+      break;
+  }
+  return body;
+}
+
+var getCurrentState = function(light) {
+    var promise = new Promise((resolve, reject) => {
+    	let options = new Options("GET", light);
+    	httpRequest(options)
+    	.then(state => resolve(state));
+	});
+	return promise;
+}
+
+var setOnStatus = function(light, body) {
+    let promise = new Promise((resolve, reject) => {
+    	getCurrentStates(light)
+    	.then(currentState => {
+    		console.log(currentState);
+    		if (!currentState.state) body.on = true;
+    		console.log(body)
+    		resolve(body);
+    	});
+    });
+    return promise;
 }
 
 var setLightsStates = function(lights, options, body) {
@@ -81,6 +119,8 @@ var setLightsStates = function(lights, options, body) {
 var exports = module.exports = {
 	httpRequest,
 	setLightsStates,
+	getCurrentStates,
 	getCurrentState,
-	Options
+	Options,
+	setOnStatus
 };
