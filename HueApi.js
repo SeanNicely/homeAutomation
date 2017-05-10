@@ -1,30 +1,25 @@
 var http = require('http')
 
+var Options = function(method, pathExtension) {
+	this.host = "192.168.1.190",
+	this.path = "/api/uDe4zdFPK-kklfaxTh3RFG6Kwe4EDyiSxwjXB5eg/lights/" + pathExtension,
+	this.method = method
+}
+
 var httpRequest = function (options, body) {
-	var promise = new Promise(function(resolve, reject) {
-		var req = http.request(options, function(res) {
+	var promise = new Promise((resolve, reject) => {
+		var req = http.request(options, res => {
 			var responseString = "";
-			res.on('data', function(data){
-				responseString += data;
-			})
-			res.on('end', function(){
-				//console.log("Response String: " + responseString);
-				resolve(JSON.parse(responseString));
-			})
-		}).on('error', function(err) {
-	     	console.error('Error with the request:', err.message);
-	 	});
+			res.on('data', data => responseString += data);
+			res.on('end', () => resolve(JSON.parse(responseString)));
+		})
+		.on('error', err => console.error('Error with the request:', err.message));
+
 		body = JSON.stringify(body);
 	 	if (typeof body !== "undefined") req.write(body);
 	 	req.end();
 	});
 	return promise;
-}
-
-var Options = function(method, pathExtension) {
-	this.host = "192.168.1.190",
-	this.path = "/api/uDe4zdFPK-kklfaxTh3RFG6Kwe4EDyiSxwjXB5eg/lights/" + pathExtension,
-	this.method = method
 }
 
 var getLights = function(room) {
@@ -52,11 +47,9 @@ var getCurrentStates = function(lights) {
     	lightQueue.push(getCurrentState(light));
     });
     
-    var promise = new Promise(function(resolve, reject){
+    let promise = new Promise(function(resolve, reject){
 	    Promise.all(lightQueue)
-	    .then(function(states){
-	    	resolve(states);
-	    });
+	    .then(states => resolve(states));
 	});
 	return promise;
 }
@@ -81,7 +74,7 @@ var getContinuous = function(body, action, percentage) {
 }
 
 var getCurrentState = function(light) {
-    var promise = new Promise((resolve, reject) => {
+    let promise = new Promise((resolve, reject) => {
     	let options = new Options("GET", light);
     	httpRequest(options)
     	.then(state => resolve(state));
@@ -93,9 +86,7 @@ var setOnStatus = function(light, body) {
     let promise = new Promise((resolve, reject) => {
     	getCurrentStates(light)
     	.then(currentState => {
-    		console.log(currentState);
     		if (!currentState.state) body.on = true;
-    		console.log(body)
     		resolve(body);
     	});
     });
@@ -104,17 +95,12 @@ var setOnStatus = function(light, body) {
 
 var setLightsStates = function(lights, options, body) {
 	var basePath = options.path;
-	lights.forEach(function(light){
+	lights.forEach(light => {
+
     	options.path = basePath + light + "/state/";
     	let response = httpRequest(options, body);
   	});
 }
-
-// var exports = module.exports = {
-// 	"httpRequest": httpRequest,
-// 	"setLightsStates": setLightsStates,
-// 	"Options": Options
-// };
 
 var exports = module.exports = {
 	httpRequest,
