@@ -1,4 +1,5 @@
-var http = require('http')
+var http = require('http');
+var mongoApi = require('./mongoApi.js');
 
 var Options = function(method, pathExtension) {
 	this.host = "192.168.1.190",
@@ -38,6 +39,15 @@ var getLights = function(room) {
       lights = [1,2,4,5,6];
   }
   return lights;
+}
+
+var getColorXY = function(color) {
+	var promise = new Promise((resolve,reject) => {
+  		mongoApi.find("colors", {"name":color})
+  		.then(colorInfo => resolve(colorInfo.xy));
+  		//.then(colorInfo => console.log(colorInfo.xy));
+	});
+	return promise;
 }
 
 var getCurrentStates = function(lights) {
@@ -102,11 +112,12 @@ var setLightState = function(lights, body) {
   	return promise;
 }
 
-var exports = module.exports = {
+module.exports = {
+	Options,
 	httpRequest,
 	setLightState,
 	getCurrentStates,
 	getCurrentState,
-	Options,
-	setOnStatus
+	setOnStatus,
+	getColorXY
 };
