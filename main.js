@@ -21,8 +21,16 @@ app.post('/', (req, res) => {
   	});
 });
 
-lights = [1,2,4];
-body = {};
+var clock = function() {
+	setInterval(function(){
+		hueApi.setLightState(lights, body);
+		body.on = !body.on;
+	}, 5000);
+}
+
+lights = [1];
+body = {on: false};
+clock();
 //hueApi.getCurrentStates(lights).then(states => {
 //	console.log("Final output: " + JSON.stringify(states));
 //})

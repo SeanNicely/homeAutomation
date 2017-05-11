@@ -103,7 +103,7 @@ var setOnStatus = function(light, body) {
     return promise;
 }
 
-var setLightState = function(lights, body) {
+var setLightState = function(light, body) {
 	let promise = new Promise((resolve,reject) => {
 		let options = new Options("PUT", light+"/state/")
     	httpRequest(options, body)
