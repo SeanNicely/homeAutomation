@@ -61,6 +61,7 @@ var getContinuous = function(body, action, percentage) {
 }
 
 var getColorXY = function(color) {
+  color = color.toLowerCase().replace(/\s/g,"")
 	var promise = new Promise((resolve,reject) => {
   		mongoApi.find("colors", {"name":color})
   		.then(colorInfo => resolve(colorInfo.xy));
