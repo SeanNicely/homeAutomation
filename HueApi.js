@@ -7,6 +7,10 @@ var Options = function(method, pathExtension) {
 	this.method = method
 }
 
+var normalize = function(str) {
+  return str.toLowerCase().replace(/\s/g,"");
+}
+
 var httpRequest = function (options, body) {
 	var promise = new Promise((resolve, reject) => {
 		var req = http.request(options, res => {
@@ -26,7 +30,7 @@ var httpRequest = function (options, body) {
 var getLights = function(room) {
   var lights;
   
-  switch (room.toLowerCase().replace(/\s/g,"")) {
+  switch (normalize(room)) {
     case "livingroom":
     case "living":
       lights = [1,2,4];
@@ -61,11 +65,11 @@ var getContinuous = function(body, action, percentage) {
 }
 
 var getColorXY = function(color) {
-  color = color.toLowerCase().replace(/\s/g,"")
+  color = normalize(color);
 	var promise = new Promise((resolve,reject) => {
   		mongoApi.find("colors", {"name":color})
-  		.then(colorInfo => resolve(colorInfo.xy));
-  		//.then(colorInfo => console.log(colorInfo.xy));
+  		.then(colorInfo => resolve(colorInfo.xy))
+      .catch(err => reject(err));
 	});
 	return promise;
 }
@@ -91,6 +95,15 @@ var getCurrentStates = function(lights) {
 	    .then(states => resolve(states));
 	});
 	return promise;
+}
+
+var getTargetTime = function (currentTime) {
+  var targetTime = new Date();
+  targetTime.setMinutes(currentTime.getMinutes() + 1);
+  targetTime.setSeconds(0);
+  targetTime.setMilliseconds(0);
+
+  return targetTime;
 }
 
 var setOnStatus = function(light, body) {
@@ -128,13 +141,13 @@ var setLightsStates = function(lights, body) {
 }
 
 module.exports = {
-	Options,
-	httpRequest,
 	setLightState,
 	setLightsStates,
 	getCurrentState,
 	getCurrentStates,
 	setOnStatus,
 	getLights,
-	getColorXY
+	getColorXY,
+  getTargetTime,
+  normalize
 };
