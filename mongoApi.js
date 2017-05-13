@@ -10,7 +10,9 @@ var db;
 var find = function(collection, query) {
 	var promise = new Promise((resolve,reject) => {
 		db.collection(collection).findOne(query)
-  		.then(data => resolve(data));
+  		.then(data => {
+  			data != null ? resolve(data) : reject(new Error(collection + ' not found'));
+  		});
 	});
 	return promise;
 }
