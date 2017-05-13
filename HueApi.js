@@ -41,29 +41,6 @@ var getLights = function(room) {
   return lights;
 }
 
-var getColorXY = function(color) {
-	var promise = new Promise((resolve,reject) => {
-  		mongoApi.find("colors", {"name":color})
-  		.then(colorInfo => resolve(colorInfo.xy));
-  		//.then(colorInfo => console.log(colorInfo.xy));
-	});
-	return promise;
-}
-
-var getCurrentStates = function(lights) {
-    var lightQueue = [];
-
-    lights.forEach(function(light) {
-    	lightQueue.push(getCurrentState(light));
-    });
-    
-    let promise = new Promise(function(resolve, reject){
-	    Promise.all(lightQueue)
-	    .then(states => resolve(states));
-	});
-	return promise;
-}
-
 var getContinuous = function(body, action, percentage) {
   percentage = parseInt(percentage);
   switch (action) {
@@ -83,11 +60,34 @@ var getContinuous = function(body, action, percentage) {
   return body;
 }
 
+var getColorXY = function(color) {
+	var promise = new Promise((resolve,reject) => {
+  		mongoApi.find("colors", {"name":color})
+  		.then(colorInfo => resolve(colorInfo.xy));
+  		//.then(colorInfo => console.log(colorInfo.xy));
+	});
+	return promise;
+}
+
 var getCurrentState = function(light) {
     let promise = new Promise((resolve, reject) => {
     	let options = new Options("GET", light);
     	httpRequest(options)
     	.then(state => resolve(state));
+	});
+	return promise;
+}
+
+var getCurrentStates = function(lights) {
+    var lightQueue = [];
+
+    lights.forEach(light => {
+    	lightQueue.push(getCurrentState(light));
+    });
+    
+    let promise = new Promise((resolve, reject) => {
+	    Promise.all(lightQueue)
+	    .then(states => resolve(states));
 	});
 	return promise;
 }
@@ -112,12 +112,28 @@ var setLightState = function(light, body) {
   	return promise;
 }
 
+var setLightsStates = function(lights, body) {
+	var lightQueue = [];
+
+	lights.forEach(light => {
+		lightQueue.push(setLightState(light, body));
+	});
+
+	let promise = new Promise((resolve, reject) => {
+		Promise.all(lightQueue)
+		.then(responses => resolve(responses))
+	});
+	return promise;
+}
+
 module.exports = {
 	Options,
 	httpRequest,
 	setLightState,
-	getCurrentStates,
+	setLightsStates,
 	getCurrentState,
+	getCurrentStates,
 	setOnStatus,
+	getLights,
 	getColorXY
 };

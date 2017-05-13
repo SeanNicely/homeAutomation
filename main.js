@@ -7,9 +7,11 @@ app.listen(3000, () => {
 });
 
 // Temporarily using to test getting colors from Mongo
-app.get('/', (req, res) => {
+app.get('/color', (req, res) => {
+	let lights = hueApi.getLights(req.query.room);
 	hueApi.getColorXY(req.query.color)
-	.then(color => console.log(color));
+	.then(color => hueApi.setLightsStates(lights, {xy:color}))
+	.then(response => res.send(response));
 });
 
 
@@ -30,7 +32,4 @@ var clock = function() {
 
 lights = [1];
 body = {on: false};
-clock();
-//hueApi.getCurrentStates(lights).then(states => {
-//	console.log("Final output: " + JSON.stringify(states));
-//})
+//clock();
