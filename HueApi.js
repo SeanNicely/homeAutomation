@@ -97,13 +97,36 @@ var getCurrentStates = function(lights) {
 	return promise;
 }
 
-var getTargetTime = function (currentTime) {
+var getTargetTime = function(currentTime) {
   var targetTime = new Date();
   targetTime.setMinutes(currentTime.getMinutes() + 1);
   targetTime.setSeconds(0);
   targetTime.setMilliseconds(0);
 
   return targetTime;
+}
+
+var clock = function(time) {
+  var hours = time.getHours;
+  var minutes = time.getMinutes().toString().split("");
+  if (minutes.length === 1) minutes.unshift(0) ;
+  var brightness;
+  var color = "red";
+
+  //mongoApi.find("clock", {})
+  mongoApi.find("colors", {"name":color})
+  .then(hourData => {
+      console.log(hourData)
+      //brightness = hourData.brightness;
+      //getColorXY(hourData.color)
+  })
+  .catch(err => console.log(err));
+  // })
+  // .then(xy => {
+  //   console.log(xy)
+  //   console.log(brightness)
+  // });
+
 }
 
 var setOnStatus = function(light, body) {
@@ -149,5 +172,6 @@ module.exports = {
 	getLights,
 	getColorXY,
   getTargetTime,
-  normalize
+  normalize,
+  clock
 };
