@@ -11,8 +11,21 @@ var normalize = function(str) {
   return str.toLowerCase().replace(/\s/g,"");
 }
 
+var pluralize = function(method, lights, body) {
+  var lightQueue = [];
+
+  lights.forEach(light => {
+    lightQueue.push(method(light, body));
+  });
+
+  return new Promise((resolve, reject) => {
+    Promise.all(lightQueue)
+    .then(responses => resolve(responses))
+  });
+}
+
 var httpRequest = function (options, body) {
-	var promise = new Promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
 		var req = http.request(options, res => {
 			var responseString = "";
 			res.on('data', data => responseString += data);
@@ -24,7 +37,6 @@ var httpRequest = function (options, body) {
 	 	if (typeof body !== "undefined") req.write(body);
 	 	req.end();
 	});
-	return promise;
 }
 
 var getLights = function(room) {
@@ -66,35 +78,19 @@ var getContinuous = function(body, action, percentage) {
 
 var getColorXY = function(color) {
   color = normalize(color);
-	var promise = new Promise((resolve,reject) => {
+	return new Promise((resolve,reject) => {
   		mongoApi.find("colors", {"name":color})
   		.then(colorInfo => resolve(colorInfo.xy))
       .catch(err => reject(err));
 	});
-	return promise;
 }
 
 var getCurrentState = function(light) {
-    let promise = new Promise((resolve, reject) => {
-    	let options = new Options("GET", light);
-    	httpRequest(options)
-    	.then(state => resolve(state));
+  return new Promise((resolve, reject) => {
+    let options = new Options("GET", light);
+    httpRequest(options)
+    .then(state => resolve(state));
 	});
-	return promise;
-}
-
-var getCurrentStates = function(lights) {
-    var lightQueue = [];
-
-    lights.forEach(light => {
-    	lightQueue.push(getCurrentState(light));
-    });
-    
-    let promise = new Promise((resolve, reject) => {
-	    Promise.all(lightQueue)
-	    .then(states => resolve(states));
-	});
-	return promise;
 }
 
 var getTargetTime = function(currentTime) {
@@ -107,71 +103,66 @@ var getTargetTime = function(currentTime) {
 }
 
 var clock = function(time) {
-  var hours = time.getHours;
-  var minutes = time.getMinutes().toString().split("");
-  if (minutes.length === 1) minutes.unshift(0) ;
+  const livingRoom = {
+    "top": 2,
+    "middle": 4,
+    "bottom": 1
+  };
   var brightness;
-  var color = "red";
+  var hour = time.getHours();
+  var minutes = time.getMinutes().toString().split("");
+  if (minutes.length === 1) minutes.unshift(0);
 
-  //mongoApi.find("clock", {})
-  mongoApi.find("colors", {"name":color})
-  .then(hourData => {
-      console.log(hourData)
-      //brightness = hourData.brightness;
-      //getColorXY(hourData.color)
-  })
-  .catch(err => console.log(err));
-  // })
-  // .then(xy => {
-  //   console.log(xy)
-  //   console.log(brightness)
-  // });
+  var Body = function(color, brightness) {
+    this.xy = color;
+    this.bri = brightness;
+  }
 
+  return new Promise((resolve, reject) => {
+    mongoApi.find("clock", {"hour": hour})
+    .then(hourData => {
+        return new Promise((resolve, reject) => {
+          brightness = hourData.bri;
+          resolve(getColorXY(hourData.color));
+        });
+    })
+    .then(hourXY => setLightState(livingRoom.top, new Body(hourXY, brightness)))
+    .then(() => mongoApi.find("clock", {"minute": Number(minutes[0])}))
+    .then(tensData => getColorXY(tensData.color))
+    .then(tensXY => setLightState(livingRoom.middle, new Body(tensXY, brightness)))
+    .then(() => mongoApi.find("clock", {"minute": Number(minutes[1])}))
+    .then(tensData => getColorXY(tensData.color))
+    .then(tensXY => setLightState(livingRoom.bottom, new Body(tensXY, brightness)))
+    .then(result => resolve(result));
+  });
 }
 
 var setOnStatus = function(light, body) {
-    let promise = new Promise((resolve, reject) => {
-    	getCurrentStates(light)
-    	.then(currentState => {
-    		if (!currentState.state) body.on = true;
-    		resolve(body);
-    	});
-    });
-    return promise;
+  return new Promise((resolve, reject) => {
+   	getCurrentState(light)
+   	.then(currentState => {
+   		if (!currentState.state.on) body.on = true;
+   		resolve(body);
+   	});
+  });
 }
 
 var setLightState = function(light, body) {
-	let promise = new Promise((resolve,reject) => {
+	return new Promise((resolve,reject) => {
 		let options = new Options("PUT", light+"/state/")
-    	httpRequest(options, body)
-    	.then(response => resolve(response));
-  	});
-  	return promise;
-}
-
-var setLightsStates = function(lights, body) {
-	var lightQueue = [];
-
-	lights.forEach(light => {
-		lightQueue.push(setLightState(light, body));
-	});
-
-	let promise = new Promise((resolve, reject) => {
-		Promise.all(lightQueue)
-		.then(responses => resolve(responses))
-	});
-	return promise;
+    httpRequest(options, body)
+    .then(response => resolve(response));
+  });
 }
 
 module.exports = {
 	setLightState,
-	setLightsStates,
 	getCurrentState,
-	getCurrentStates,
 	setOnStatus,
 	getLights,
 	getColorXY,
   getTargetTime,
   normalize,
+  pluralize,
   clock
 };
