@@ -76,12 +76,14 @@ var getContinuous = function(body, action, percentage) {
   return body;
 }
 
-var getColorXY = function(color) {
+var getColorXY = function(color, body) {
   color = normalize(color);
 	return new Promise((resolve,reject) => {
   		mongoApi.find("colors", {"name":color})
-  		.then(colorInfo => resolve(colorInfo.xy))
-      .catch(err => reject(err));
+  		.then(colorInfo => {
+          body.xy = colorInfo.xy;
+          resolve(body)
+        }, err => reject(err));
 	});
 }
 
@@ -89,7 +91,7 @@ var getCurrentState = function(light) {
   return new Promise((resolve, reject) => {
     let options = new Options("GET", light);
     httpRequest(options)
-    .then(state => resolve(state));
+    .then(lightInfo => resolve(lightInfo.state));
 	});
 }
 
@@ -102,38 +104,16 @@ var getTargetTime = function(currentTime) {
   return targetTime;
 }
 
-var clock = function(time) {
-  const livingRoom = {
-    "top": 2,
-    "middle": 4,
-    "bottom": 1
-  };
-  var brightness;
-  var hour = time.getHours();
-  var minutes = time.getMinutes().toString().split("");
-  if (minutes.length === 1) minutes.unshift(0);
-
-  var Body = function(color, brightness) {
-    this.xy = color;
-    this.bri = brightness;
-  }
-
+var setRoomStatus = function(room) {
+  var body = {};
   return new Promise((resolve, reject) => {
-    mongoApi.find("clock", {"hour": hour})
-    .then(hourData => {
-        return new Promise((resolve, reject) => {
-          brightness = hourData.bri;
-          resolve(getColorXY(hourData.color));
-        });
-    })
-    .then(hourXY => setLightState(livingRoom.top, new Body(hourXY, brightness)))
-    .then(() => mongoApi.find("clock", {"minute": Number(minutes[0])}))
-    .then(tensData => getColorXY(tensData.color))
-    .then(tensXY => setLightState(livingRoom.middle, new Body(tensXY, brightness)))
-    .then(() => mongoApi.find("clock", {"minute": Number(minutes[1])}))
-    .then(tensData => getColorXY(tensData.color))
-    .then(tensXY => setLightState(livingRoom.bottom, new Body(tensXY, brightness)))
-    .then(result => resolve(result));
+    pluralize(getCurrentState, getLights(room), body)
+    .then(states => {
+      for (let state in states) {
+        if (state.on) body.on = true;
+      }
+      resolve(body);
+    }, err => reject(err));
   });
 }
 
@@ -143,7 +123,7 @@ var setOnStatus = function(light, body) {
    	.then(currentState => {
    		if (!currentState.state.on) body.on = true;
    		resolve(body);
-   	});
+   	}, err => reject(err));
   });
 }
 
@@ -152,6 +132,41 @@ var setLightState = function(light, body) {
 		let options = new Options("PUT", light+"/state/")
     httpRequest(options, body)
     .then(response => resolve(response));
+  });
+}
+
+var clock = function(time) {
+  var retVal = "";
+  const livingRoom = {
+    "top":2,
+    "middle": 4,
+    "bottom": 1
+  };
+  var hour = time.getHours();
+  var minutes = time.getMinutes().toString().split("");
+  if (minutes.length === 1) minutes.unshift(0);
+
+  return new Promise((resolve, reject) => {
+    mongoApi.find("clock", {"hour": hour})
+    .then(hourData => {
+      var Body = {
+        "bri": hourData.bri,
+        "on": true
+      };
+
+      getColorXY(hourData.color, Body).then(body => setLightState(livingRoom.top, body), err => reject(err)).then(result => retVal += result, err => reject(err));
+
+      mongoApi.find("clock", {"minute": Number(minutes[0])})
+      .then(tensData => getColorXY(tensData.color, Body), err => reject(err))
+      .then(body => setLightState(livingRoom.middle, body), err => reject(err))
+      .then(result => retVal += result);
+      
+      mongoApi.find("clock", {"minute": Number(minutes[1])})
+      .then(onesData => getColorXY(onesData.color, Body), err => reject(err))
+      .then(body => setLightState(livingRoom.bottom, body), err => reject(err))
+      .then(result => retVal += result, err => reject(err));
+    })
+    .then(resolve(retVal));
   });
 }
 

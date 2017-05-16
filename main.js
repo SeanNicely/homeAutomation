@@ -41,11 +41,14 @@ app.get('/continuous', (req, res) => {
 });
 
 app.get('/color', (req, res) => {
-	stopClock(req.query.room);
 	let lights = hueApi.getLights(req.query.room);
-	hueApi.getColorXY(req.query.color)
+
+	stopClock(req.query.room);
+
+	hueApi.setRoomStatus(req.query.room)
+	.then(body => hueApi.getColorXY(req.query.color, body))
 	.then(
-		color => hueApi.pluralize(hueApi.setLightState, lights, {xy:color}),
+		body => hueApi.pluralize(hueApi.setLightState, lights, body),
 		err => respond(res, "Problem setting " + req.query.room + " lights to " + req.query.color, err)
 	)
 	.then(
@@ -55,7 +58,6 @@ app.get('/color', (req, res) => {
 });
 
 app.get('/off', (req, res) => {
-	console.log("hit")
 	stopClock(req.query.room);
 	hueApi.pluralize(hueApi.setLightState, hueApi.getLights(req.query.room), {"on":false})
 	.then(
@@ -64,19 +66,11 @@ app.get('/off', (req, res) => {
 	);
 });
 
-app.post('/', (req, res) => {
-  	hueApi.getTest((error, response) => {
-  		console.log(response);
-  		res.send("hello");
-  	});
-});
-
 app.get('/clock', (req, res) => {
 	var currentTime = new Date();
 	var targetTime = hueApi.getTargetTime(currentTime);
 
-	hueApi.pluralize(hueApi.setLightState, hueApi.getLights("livingroom"), {"on":true})
-	.then(hueApi.clock(currentTime))
+	hueApi.clock(currentTime);
 	setTimeout(() => {
 		timers["livingroom"] = setInterval(function(){
 			hueApi.clock(new Date());
