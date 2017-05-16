@@ -24,8 +24,8 @@ function stopClock(room) {
 	return "Timer cleared for " + room;
 }
 
-app.listen(3123, () => {
-	console.log('Light Automator listening on port 3123!')
+app.listen(3000, () => {
+	console.log('Light Automator listening on port 3000!')
 });
 
 // Handles setting Brightness and Saturation attributes

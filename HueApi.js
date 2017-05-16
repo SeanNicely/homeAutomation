@@ -81,7 +81,7 @@ var getColorXY = function(color, body) {
 	return new Promise((resolve,reject) => {
   		mongoApi.find("colors", {"name":color})
   		.then(colorInfo => {
-          body.color = colorInfo.xy;
+          body.xy = colorInfo.xy;
           resolve(body)
         }, err => reject(err));
 	});
@@ -136,8 +136,12 @@ var setLightState = function(light, body) {
 }
 
 var clock = function(time) {
-  var retVal;
-  const livingRoom = [2,4,1]; //Light IDs for top, middle, and bottom (in order)
+  var retVal = "";
+  const livingRoom = {
+    "top":2,
+    "middle": 4,
+    "bottom": 1
+  };
   var hour = time.getHours();
   var minutes = time.getMinutes().toString().split("");
   if (minutes.length === 1) minutes.unshift(0);
@@ -145,23 +149,22 @@ var clock = function(time) {
   return new Promise((resolve, reject) => {
     mongoApi.find("clock", {"hour": hour})
     .then(hourData => {
-      var Body = function(color) {
-        this.xy = color;
-        this.bri = hourData.bri;
-        this.on = true;
+      var Body = {
+        "bri": hourData.bri,
+        "on": true
       };
 
-      getColorXY(hourData.color).then(hourXY => setLightState(livingRoom.top, new Body(hourXY))).then(result => retval += result);
+      getColorXY(hourData.color, Body).then(body => setLightState(livingRoom.top, body), err => reject(err)).then(result => retVal += result, err => reject(err));
 
       mongoApi.find("clock", {"minute": Number(minutes[0])})
-      .then(tensData => getColorXY(tensData.color))
-      .then(tensXY => setLightState(livingRoom.middle, new Body(tensXY)))
-      .then(result => retval += result);
+      .then(tensData => getColorXY(tensData.color, Body), err => reject(err))
+      .then(body => setLightState(livingRoom.middle, body), err => reject(err))
+      .then(result => retVal += result);
       
       mongoApi.find("clock", {"minute": Number(minutes[1])})
-      .then(tensData => getColorXY(tensData.color))
-      .then(tensXY => setLightState(livingRoom.bottom, new Body(tensXY)))
-      .then(result => retval += result);
+      .then(onesData => getColorXY(onesData.color, Body), err => reject(err))
+      .then(body => setLightState(livingRoom.bottom, body), err => reject(err))
+      .then(result => retVal += result, err => reject(err));
     })
     .then(resolve(retVal));
   });
