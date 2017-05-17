@@ -1,10 +1,12 @@
 var express = require('express');
-var hueApi = require('lib/HueApi.js');
-var schedules = require('lib/schedules.js');
+var hueApi = require('./lib/HueApi.js');
+var schedules = require('./lib/schedules.js');
+var rest = require('./lib/restApi.js');
 var app = express();
 
 app.listen(3000, () => {
 	console.log('Light Controller listening on port 3000!')
+	timers = schedules.timers;
 });
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
@@ -39,6 +41,7 @@ app.get('/color', (req, res) => {
 
 app.get('/off', (req, res) => {
 	let lights = hueApi.getLights(req.query.room);
+	console.log(lights)
 	schedules.stopClock(req.query.room);
 	hueApi.pluralize(hueApi.setLightState, lights, {"on":false})
 	.then(
