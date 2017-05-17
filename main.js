@@ -1,38 +1,17 @@
 var express = require('express');
-var hueApi = require('./HueApi.js');
+var hueApi = require('lib/HueApi.js');
+var schedules = require('lib/schedules.js');
 var app = express();
-var timers = {
-	"livingroom": null,
-	"bedroom": null,
-	"bathroom": null
-};
-
-function respond(response, message, err) {
-	err ? console.log(err) : console.log(message);
-	response.send(message);
-}
-
-function stopClock(room) {
-	if (room === "all") {
-		for (let rm in timers) {
-			console.log("whatup");
-			if (timers[rm]) clearInterval(timers[rm]);
-		}
-	} else {
-		if (timers[room]) clearInterval(timers[room]);
-	}
-	return "Timer cleared for " + room;
-}
 
 app.listen(3000, () => {
-	console.log('Light Automator listening on port 3000!')
+	console.log('Light Controller listening on port 3000!')
 });
 
-// Handles setting Brightness and Saturation attributes
+// Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
 	let lights = hueApi.getLights(req.query.room);
 
-	stopClock(req.query.room);
+	schedules.stopClock(req.query.room);
 
 	hueApi.setRoomStatus(req.query.room)
 	.then(body => {
@@ -41,8 +20,8 @@ app.get('/continuous', (req, res) => {
 		hueApi.pluralize(hueApi.setLightState, lights, body)
 	})
 	.then(
-		response => respond(res, req.query.room + " lights set to " + req.query.percentage + " percent " + req.query.attribute),
-		err => respond(res, "Problem setting " + req.query.room + " to " + req.query.percentage + " percent " + req.query.attribute, err)
+		response => rest.respond(res, req.query.room + " lights set to " + req.query.percentage + " percent " + req.query.attribute),
+		err => rest.respond(res, "Problem setting " + req.query.room + " to " + req.query.percentage + " percent " + req.query.attribute, err)
 	);
 });
 
@@ -50,20 +29,21 @@ app.get('/color', (req, res) => {
 	let lights = hueApi.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
-	stopClock(req.query.room);
+	schedules.stopClock(req.query.room);
 
 	hueApi.setRoomStatus(req.query.room)
-	.then(body => hueApi.getColorXY(req.query.color, body), err => respond(res, problemString, err))
-	.then(body => hueApi.pluralize(hueApi.setLightState, lights, body), err => respond(res, problemString, err))
-	.then(response => respond(res, req.query.room + " lights set to " + req.query.color), err => respond(res, problemString, err));
+	.then(body => hueApi.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
+	.then(body => hueApi.pluralize(hueApi.setLightState, lights, body), err => rest.respond(res, problemString, err))
+	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
 
 app.get('/off', (req, res) => {
-	stopClock(req.query.room);
-	hueApi.pluralize(hueApi.setLightState, hueApi.getLights(req.query.room), {"on":false})
+	let lights = hueApi.getLights(req.query.room);
+	schedules.stopClock(req.query.room);
+	hueApi.pluralize(hueApi.setLightState, lights, {"on":false})
 	.then(
-		response => respond(res, req.query.room + " lights are now off"),
-		err => respond(res, "Problem turning off " + req.query.room + " lights", err)
+		response => rest.respond(res, req.query.room + " lights are now off"),
+		err => rest.respond(res, "Problem turning off " + req.query.room + " lights", err)
 	);
 });
 
@@ -73,7 +53,7 @@ app.get('/clock', (req, res) => {
 
 	hueApi.clock(currentTime);
 	setTimeout(() => {
-		timers["livingroom"] = setInterval(function(){
+		schedules.timers["livingroom"] = setInterval(function(){
 			hueApi.clock(new Date());
 		}, 60000);
 	}, targetTime - currentTime);
