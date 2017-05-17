@@ -30,31 +30,32 @@ app.listen(3000, () => {
 
 // Handles setting Brightness and Saturation attributes
 app.get('/continuous', (req, res) => {
-	stopClock(req.query.room);
-	let attribute = req.query.attribute;
 	let lights = hueApi.getLights(req.query.room);
-	hueApi.pluralize(hueApi.setLightState, lights, {attribute:req.query.percentage})
+
+	stopClock(req.query.room);
+
+	hueApi.setRoomStatus(req.query.room)
+	.then(body => {
+		body = hueApi.getContinuous(body, req.query.attribute, req.query.percentage);
+		console.log(body)
+		hueApi.pluralize(hueApi.setLightState, lights, body)
+	})
 	.then(
-		response => respond(res, req.query.room + " lights set to " + req.query.color),
+		response => respond(res, req.query.room + " lights set to " + req.query.percentage + " percent " + req.query.attribute),
 		err => respond(res, "Problem setting " + req.query.room + " to " + req.query.percentage + " percent " + req.query.attribute, err)
 	);
 });
 
 app.get('/color', (req, res) => {
 	let lights = hueApi.getLights(req.query.room);
+	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
 	stopClock(req.query.room);
 
 	hueApi.setRoomStatus(req.query.room)
-	.then(body => hueApi.getColorXY(req.query.color, body))
-	.then(
-		body => hueApi.pluralize(hueApi.setLightState, lights, body),
-		err => respond(res, "Problem setting " + req.query.room + " lights to " + req.query.color, err)
-	)
-	.then(
-		response => respond(res, req.query.room + " lights set to " + req.query.color),
-		err => respond(res, "Problem setting " + req.query.room + " lights to " + req.query.color, err)
-	);
+	.then(body => hueApi.getColorXY(req.query.color, body), err => respond(res, problemString, err))
+	.then(body => hueApi.pluralize(hueApi.setLightState, lights, body), err => respond(res, problemString, err))
+	.then(response => respond(res, req.query.room + " lights set to " + req.query.color), err => respond(res, problemString, err));
 });
 
 app.get('/off', (req, res) => {

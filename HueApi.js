@@ -51,27 +51,36 @@ var getLights = function(room) {
     case "bed":
       lights = [5,6];
       break;
-    default:
+    case "all":
       lights = [1,2,4,5,6];
+    default:
+      lights = new Error(room + " is not a valid room")
   }
   return lights;
 }
 
-var getContinuous = function(body, action, percentage) {
+var getContinuous = function(body, attribute, percentage) {
   percentage = parseInt(percentage);
-  switch (action) {
+  switch (attribute) {
+    case "bri":
     case "brightness":
       percentage = Math.floor(255*percentage/100);
-      body["bri"] = percentage;
+      body.bri = percentage;
       break;
     case "temperature":
+    case "color temperature":
+    case "colortemperature":
+    case "ct":
       percentage = Math.floor(347*percentage/100 + 153);
-      body["ct"] = percentage;
+      body.ct = percentage;
       break;
+    case "sat":
     case "saturation":
       percentage = Math.floor(255*percentage/100);
-      body["sat"] = percentage;
+      body.sat = percentage;
       break;
+    default:
+      return new Error(attribute + " is an invalid attribute");
   }
   return body;
 }
@@ -110,7 +119,7 @@ var setRoomStatus = function(room) {
     pluralize(getCurrentState, getLights(room), body)
     .then(states => {
       for (let state in states) {
-        if (state.on) body.on = true;
+        if (!state.on) body.on = true;
       }
       resolve(body);
     }, err => reject(err));
@@ -173,7 +182,9 @@ var clock = function(time) {
 module.exports = {
 	setLightState,
 	getCurrentState,
+  getContinuous,
 	setOnStatus,
+  setRoomStatus,
 	getLights,
 	getColorXY,
   getTargetTime,
