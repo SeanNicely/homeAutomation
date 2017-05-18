@@ -40,6 +40,7 @@ app.get('/color', (req, res) => {
 });
 
 app.get('/off', (req, res) => {
+	req.query.room = req.query.room || "all";
 	let lights = hueApi.getLights(req.query.room);
 	console.log(lights)
 	schedules.stopClock(req.query.room);
@@ -61,5 +62,5 @@ app.get('/clock', (req, res) => {
 		}, 60000);
 	}, targetTime - currentTime);
 
-	res.send("clock started");
+	rest.response(res, "clock started");
 });
