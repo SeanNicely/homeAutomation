@@ -18,7 +18,6 @@ app.get('/continuous', (req, res) => {
 	hueApi.setRoomStatus(req.query.room)
 	.then(body => {
 		body = hueApi.getContinuous(body, req.query.attribute, req.query.percentage);
-		console.log(body)
 		hueApi.pluralize(hueApi.setLightState, lights, body)
 	})
 	.then(
@@ -42,7 +41,6 @@ app.get('/color', (req, res) => {
 app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
 	let lights = hueApi.getLights(req.query.room);
-	console.log(lights)
 	schedules.stopClock(req.query.room);
 	hueApi.pluralize(hueApi.setLightState, lights, {"on":false})
 	.then(
