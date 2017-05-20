@@ -11,6 +11,7 @@ app.listen(3000, () => {
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
+	let percentage = parseInt(req.query.percentage);
 	let lights = hueApi.getLights(req.query.room);
 
 	schedules.stopClock(req.query.room);
@@ -21,8 +22,8 @@ app.get('/continuous', (req, res) => {
 		hueApi.pluralize(hueApi.setLightState, lights, body)
 	})
 	.then(
-		response => rest.respond(res, req.query.room + " lights set to " + req.query.percentage + " percent " + req.query.attribute),
-		err => rest.respond(res, "Problem setting " + req.query.room + " to " + req.query.percentage + " percent " + req.query.attribute, err)
+		response => rest.respond(res, req.query.room + " lights set to " + req.query.percentage + " " + req.query.attribute),
+		err => rest.respond(res, "Problem setting " + req.query.room + " lights to " + req.query.percentage + " " + req.query.attribute, err)
 	);
 });
 
@@ -60,5 +61,5 @@ app.get('/clock', (req, res) => {
 		}, 60000);
 	}, targetTime - currentTime);
 
-	rest.response(res, "clock started");
+	rest.respond(res, "clock started");
 });
