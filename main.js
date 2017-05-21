@@ -39,6 +39,11 @@ app.get('/color', (req, res) => {
 	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
 
+app.get('/scene', (req, res) => {
+	hueApi.setScene(req.query.scene)
+	.then(response => rest.respond(res, "Scene set to " + req.query.scene), err => rest.respond(res, "Problem setting scene to " + req.query.scene));
+});
+
 app.get('/on', (req, res) => {
   	switch(hueApi.normalize(req.query.room)) {
 	    case "livingroom":
