@@ -39,6 +39,22 @@ app.get('/color', (req, res) => {
 	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
 
+app.get('/on', (req, res) => {
+  	switch(hueApi.normalize(req.query.room)) {
+	    case "livingroom":
+    	case "living":
+      		res.redirect('/clock');
+      		break;
+    	case "all":
+      		hueApi.on("bedroom");
+      		hueApi.on("bathroom");
+      		res.redirect('/clock');
+      		break;
+    	default:
+      		hueApi.on(hueApi.normalize(req.query.room))
+    }
+});
+
 app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
 	let lights = hueApi.getLights(req.query.room);
