@@ -12,7 +12,7 @@ app.listen(3000, () => {
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
 	let percentage = parseInt(req.query.percentage);
-	let lights = hue.getLights(req.query.room);
+	let lights = mongo.getLights(req.query.room);
 
 	schedules.stopClock(req.query.room);
 
@@ -28,13 +28,13 @@ app.get('/continuous', (req, res) => {
 });
 
 app.get('/color', (req, res) => {
-	let lights = hue.getLights(req.query.room);
+	let lights = mongo.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
 	schedules.stopClock(req.query.room);
 
 	hue.setRoomStatus(req.query.room)
-	.then(body => hue.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
+	.then(body => mongo.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
 	.then(body => hue.pluralize(hue.setLightState, lights, body), err => rest.respond(res, problemString, err))
 	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
@@ -62,7 +62,7 @@ app.get('/on', (req, res) => {
 
 app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
-	let lights = hue.getLights(req.query.room);
+	let lights = mongo.getLights(req.query.room);
 	schedules.stopClock(req.query.room);
 	hue.pluralize(hue.setLightState, lights, {"on":false})
 	.then(
@@ -72,15 +72,6 @@ app.get('/off', (req, res) => {
 });
 
 app.get('/clock', (req, res) => {
-	var currentTime = new Date();
-	var targetTime = hue.getTargetTime(currentTime);
-
-	hue.clock(currentTime);
-	setTimeout(() => {
-		schedules.timers["livingroom"] = setInterval(function(){
-			hue.clock(new Date());
-		}, 60000);
-	}, targetTime - currentTime);
-
-	rest.respond(res, "clock started");
+	hue.clock()
+	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
