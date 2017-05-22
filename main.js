@@ -2,6 +2,7 @@ var express = require('express');
 var hue = require('./lib/HueApi.js');
 var schedules = require('./lib/schedules.js');
 var rest = require('./lib/restApi.js');
+var mongo = require('./lib/mongoApi.js');
 var app = express();
 
 app.listen(3000, () => {
@@ -45,7 +46,7 @@ app.get('/scene', (req, res) => {
 });
 
 app.get('/on', (req, res) => {
-  	switch(hue.normalize(req.query.room)) {
+  	switch(mongo.normalize(req.query.room)) {
 	    case "livingroom":
     	case "living":
       		res.redirect('/clock');
@@ -56,7 +57,7 @@ app.get('/on', (req, res) => {
       		res.redirect('/clock');
       		break;
     	default:
-      		hue.on(hue.normalize(req.query.room))
+      		hue.on(mongo.normalize(req.query.room))
     }
 });
 
