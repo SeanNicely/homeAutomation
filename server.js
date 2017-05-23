@@ -73,6 +73,6 @@ app.get('/off', (req, res) => {
 });
 
 app.get('/clock', (req, res) => {
-	hue.clock()
+	hue.clock(timers)
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
