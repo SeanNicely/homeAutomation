@@ -12,6 +12,7 @@ app.listen(3000, () => {
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
+	hue.setRoomState(req.query.room, "custom");
 	let percentage = parseInt(req.query.percentage);
 	let lights = mongo.getLights(req.query.room);
 
@@ -29,6 +30,7 @@ app.get('/continuous', (req, res) => {
 });
 
 app.get('/color', (req, res) => {
+	hue.setRoomState(req.query.room, "custom");
 	let lights = mongo.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
@@ -41,11 +43,13 @@ app.get('/color', (req, res) => {
 });
 
 app.get('/scene', (req, res) => {
+	hue.setRoomState(req.query.room, req.query.scene);
 	hue.setScene(req.query.scene)
 	.then(response => rest.respond(res, "Scene set to " + req.query.scene), err => rest.respond(res, "Problem setting scene to " + req.query.scene));
 });
 
 app.get('/on', (req, res) => {
+	hue.setRoomState(req.query.room, "standardOn");
   	switch(mongo.normalize(req.query.room)) {
 	    case "livingroom":
     	case "living":
@@ -62,6 +66,7 @@ app.get('/on', (req, res) => {
 });
 
 app.get('/off', (req, res) => {
+	hue.setRoomState(req.query.room, "off");
 	req.query.room = req.query.room || "all";
 	let lights = mongo.getLights(req.query.room);
 	schedules.stopClock(req.query.room);
