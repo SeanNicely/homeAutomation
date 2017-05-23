@@ -4,7 +4,7 @@
   "description": "Automation hub for Philips Hue lights and other various smart-home tasks",
   "main": "main.js",
   "scripts": {
-    "test": "npm test"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "keywords": [
     "npm"
