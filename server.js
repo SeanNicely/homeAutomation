@@ -1,13 +1,12 @@
 var express = require('express');
 var hue = require('./lib/HueApi.js');
-var schedules = require('./lib/schedules.js');
+var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
 var app = express();
 
 app.listen(3000, () => {
 	console.log('Light Controller listening on port 3000!')
-	timers = schedules.timers;
 });
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
@@ -16,7 +15,7 @@ app.get('/continuous', (req, res) => {
 	let percentage = parseInt(req.query.percentage);
 	let lights = mongo.getLights(req.query.room);
 
-	schedules.stopClock(req.query.room);
+	sc.stopClock(req.query.room);
 
 	hue.setRoomStatus(req.query.room)
 	.then(body => {
@@ -34,7 +33,7 @@ app.get('/color', (req, res) => {
 	let lights = mongo.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
-	schedules.stopClock(req.query.room);
+	sc.stopClock(req.query.room);
 
 	hue.setRoomStatus(req.query.room)
 	.then(body => mongo.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
@@ -69,8 +68,7 @@ app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
 	hue.setRoomState(req.query.room, "off");
 	let lights = mongo.getLights(req.query.room);
-	schedules.stopClock(req.query.room);
-	console.log("server.off",timers)
+	sc.stopClock(req.query.room);
 	hue.pluralize(hue.setLightState, lights, {"on":false})
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
@@ -79,12 +77,12 @@ app.get('/off', (req, res) => {
 });
 
 app.get('/clock', (req, res) => {
-	hue.clock(timers)
+	hue.clock()
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
 
 app.get('/nightstand', (req, res) => {
-	schedules.stopClock('bedroom');
+	sc.stopClock('bedroom');
 	switch(hue.roomState['bedroom']) {
 		case "bedroomnight":
 			hue.roomState['bedroom'] = "almostoff";
