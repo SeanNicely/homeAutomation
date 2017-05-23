@@ -66,10 +66,11 @@ app.get('/on', (req, res) => {
 });
 
 app.get('/off', (req, res) => {
-	hue.setRoomState(req.query.room, "off");
 	req.query.room = req.query.room || "all";
+	hue.setRoomState(req.query.room, "off");
 	let lights = mongo.getLights(req.query.room);
 	schedules.stopClock(req.query.room);
+	console.log("server.off",timers)
 	hue.pluralize(hue.setLightState, lights, {"on":false})
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
@@ -81,3 +82,27 @@ app.get('/clock', (req, res) => {
 	hue.clock(timers)
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
+
+app.get('/nightstand', (req, res) => {
+	schedules.stopClock('bedroom');
+	switch(hue.roomState['bedroom']) {
+		case "bedroomnight":
+			hue.roomState['bedroom'] = "almostoff";
+			hue.setLightState(6, {"bri": 1})
+			.then(
+				resposne => rest.respond(res, "almost off"),
+				err => rest.respond(res, "Error occured setting to almost off", err)
+			);
+			break;
+		case  "almostoff":
+			res.redirect('off');
+			break;
+		default:
+			hue.roomState['bedroom'] = "bedroomnight";
+			hue.setScene("bedroomnight")
+			.then(
+				resposne => rest.respond(res, "set scene to bedroomnight"),
+				err => rest.respond(res, "Error occured setting to bedroom night", err)
+			);
+	}
+})
