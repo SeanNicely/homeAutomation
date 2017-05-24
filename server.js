@@ -11,11 +11,11 @@ app.listen(3000, () => {
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
-	hue.setRoomState(req.query.room, "custom");
+	sc.setRoomState(req.query.room, "custom");
 	let percentage = parseInt(req.query.percentage);
 	let lights = mongo.getLights(req.query.room);
 
-	sc.stopClock(req.query.room);
+	sc.stopTimer(req.query.room);
 
 	hue.setRoomStatus(req.query.room)
 	.then(body => {
@@ -29,11 +29,11 @@ app.get('/continuous', (req, res) => {
 });
 
 app.get('/color', (req, res) => {
-	hue.setRoomState(req.query.room, "custom");
+	sc.setRoomState(req.query.room, "custom");
 	let lights = mongo.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
-	sc.stopClock(req.query.room);
+	sc.stopTimer(req.query.room);
 
 	hue.setRoomStatus(req.query.room)
 	.then(body => mongo.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
@@ -42,13 +42,13 @@ app.get('/color', (req, res) => {
 });
 
 app.get('/scene', (req, res) => {
-	hue.setRoomState(req.query.room, req.query.scene);
+	sc.setRoomState(req.query.room, req.query.scene);
 	hue.setScene(req.query.scene)
 	.then(response => rest.respond(res, "Scene set to " + req.query.scene), err => rest.respond(res, "Problem setting scene to " + req.query.scene));
 });
 
 app.get('/on', (req, res) => {
-	hue.setRoomState(req.query.room, "standardOn");
+	sc.setRoomState(req.query.room, "standardOn");
   	switch(mongo.normalize(req.query.room)) {
 	    case "livingroom":
     	case "living":
@@ -66,9 +66,9 @@ app.get('/on', (req, res) => {
 
 app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
-	hue.setRoomState(req.query.room, "off");
+	sc.setRoomState(req.query.room, "off");
 	let lights = mongo.getLights(req.query.room);
-	sc.stopClock(req.query.room);
+	sc.stopTimer(req.query.room);
 	hue.pluralize(hue.setLightState, lights, {"on":false})
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
@@ -82,10 +82,10 @@ app.get('/clock', (req, res) => {
 });
 
 app.get('/nightstand', (req, res) => {
-	sc.stopClock('bedroom');
-	switch(hue.roomState['bedroom']) {
+	sc.stopTimer('bedroom');
+	switch(sc.getRoomState('bedroom')) {
 		case "bedroomnight":
-			hue.roomState['bedroom'] = "almostoff";
+			sc.setRoomState('bedroom') = "almostoff";
 			hue.setLightState(6, {"bri": 1})
 			.then(
 				resposne => rest.respond(res, "almost off"),
@@ -96,7 +96,7 @@ app.get('/nightstand', (req, res) => {
 			res.redirect('off');
 			break;
 		default:
-			hue.roomState['bedroom'] = "bedroomnight";
+			sc.setRoomState('bedroom') = "bedroomnight";
 			hue.setScene("bedroomnight")
 			.then(
 				resposne => rest.respond(res, "set scene to bedroomnight"),
