@@ -3,6 +3,7 @@ var hue = require('./lib/HueApi.js');
 var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
+var schedules = require('./lib/schedules.js');
 var app = express();
 
 app.listen(3000, () => {
