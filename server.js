@@ -4,6 +4,7 @@ var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
 var schedules = require('./lib/schedules.js');
+var normalize = require('./lib/utils.js').normalize;
 var app = express();
 
 app.listen(3000, () => {
@@ -50,7 +51,7 @@ app.get('/scene', (req, res) => {
 
 app.get('/on', (req, res) => {
 	sc.setRoomState(req.query.room, "standardOn");
-  	switch(mongo.normalize(req.query.room)) {
+  	switch(normalize(req.query.room)) {
 	    case "livingroom":
     	case "living":
       		res.redirect('/clock');
@@ -61,7 +62,7 @@ app.get('/on', (req, res) => {
       		res.redirect('/clock');
       		break;
     	default:
-      		hue.on(mongo.normalize(req.query.room))
+      		hue.on(normalize(req.query.room))
     }
 });
 
@@ -86,7 +87,7 @@ app.get('/nightstand', (req, res) => {
 	sc.stopTimer('bedroom');
 	switch(sc.getRoomState('bedroom')) {
 		case "bedroomnight":
-			sc.setRoomState('bedroom') = "almostoff";
+			sc.setRoomState('bedroom', "almostoff");
 			hue.setLightState(6, {"bri": 1})
 			.then(
 				resposne => rest.respond(res, "almost off"),
@@ -97,7 +98,7 @@ app.get('/nightstand', (req, res) => {
 			res.redirect('off');
 			break;
 		default:
-			sc.setRoomState('bedroom') = "bedroomnight";
+			sc.setRoomState('bedroom', "bedroomnight");
 			hue.setScene("bedroomnight")
 			.then(
 				resposne => rest.respond(res, "set scene to bedroomnight"),
