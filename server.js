@@ -4,7 +4,8 @@ var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
 var schedules = require('./lib/schedules.js');
-var normalize = require('./lib/utils.js').normalize;
+var normalize = require('./lib/utils.js').normalize
+	, logger = require('./lib/utils.js').logger;
 var app = express();
 
 app.listen(3000, () => {
@@ -105,4 +106,11 @@ app.get('/nightstand', (req, res) => {
 				err => rest.respond(res, "Error occured setting to bedroom night", err)
 			);
 	}
-})
+});
+
+// Catch-all for non-existent routes
+app.use('*', function(req,res) {
+	let message = '404 ' + req.baseUrl + " is not a valid route";
+	logger(message);
+	res.status(404).send(message);
+});
