@@ -1,4 +1,5 @@
 var expect = require('chai').expect;
+var sinon = require('sinon');
 var hue = require("../lib/hueApi.js");
 
 describe("Hue Lights API", () => {
@@ -35,12 +36,27 @@ describe("Hue Lights API", () => {
 			expect(hue.getTargetTime).to.exist;
 		});
 	});
-});
 
+	describe("Set On Status", () => {
+		beforeEach(() => { stub = sinon.stub(hue, "getCurrentState") });
+		afterEach(() => { stub.restore() });
 
-// Templates
-/*describe("", () => {
-	it("should ", () => {
+		it("should exist", () => {
+			expect(hue.setOnStatus).to.exist;
+		});	
 
+		it("should insert a property for on:true if light is off", () => {
+			stub.returns(Promise.resolve({"state":{"on":false}}));
+			return hue.setOnStatus(1, {}).then(result => {
+				expect(result).to.deep.equal({"on":true});
+			}, reason => {throw new Error(reason)});
+		});
+
+		it("should return an empty object if light is on", () => {
+			stub.returns(Promise.resolve({"state":{"on":true}}));
+			return hue.setOnStatus(1, {}).then(result => {
+				expect(result).to.deep.equal({});
+			}, reason => {throw new Error(reason)});
+		});
 	});
-});*/
+});
