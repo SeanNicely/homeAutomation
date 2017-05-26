@@ -1,4 +1,4 @@
-var expect = require('chai').expect;
+var expect = require("chai").expect;
 var utils = require('../lib/utils.js');
 
 describe("Utility Functions", () => {
@@ -35,4 +35,17 @@ describe("Utility Functions", () => {
 		});
 	});
 
-})
+	describe("Pluralize", () => {
+		it ("should have a pluralize function", () => {
+			expect(utils.pluralize).to.exist;
+		});
+
+		it("should pluralize asynchonous functions", () => {
+			var asyncfunc = function(num) { return new Promise((res,rej) => res("foo" + num))}
+			return utils.pluralize(asyncfunc, [1,2,3,4], {}).then(result => {
+				expect(result).to.deep.equal(['foo1','foo2','foo3','foo4'])
+			}, reason => { throw new Error(reason)});
+		});
+	});
+
+});

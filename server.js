@@ -5,7 +5,8 @@ var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
 var schedules = require('./lib/schedules.js');
 var normalize = require('./lib/utils.js').normalize
-	, logger = require('./lib/utils.js').logger;
+	, logger = require('./lib/utils.js').logger
+	, pluralize = require('./lib/utils.js').pluralize;
 var app = express();
 
 app.listen(3000, () => {
