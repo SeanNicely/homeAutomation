@@ -2,7 +2,7 @@ var expect = require('chai').expect;
 var hue = require("../lib/hueApi.js");
 
 describe("Hue Lights API", () => {
-	describe("The getContinuous Function", () => {
+	describe("Get Continuous", () => {
 		it("should exist", () => {
 			expect(hue.getContinuous).to.exist;
 		})
@@ -29,4 +29,18 @@ describe("Hue Lights API", () => {
 			expect(hue.getContinuous({}, "foo", 0)).to.deep.equal(new Error("foo is not a valid room"))
 		});
 	});
+
+	describe("Get Target Time", () => {
+		it("should return the next minute", () => {
+			expect(hue.getTargetTime).to.exist;
+		});
+	});
 });
+
+
+// Templates
+/*describe("", () => {
+	it("should ", () => {
+
+	});
+});*/
