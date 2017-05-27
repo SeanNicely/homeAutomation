@@ -1,5 +1,8 @@
-var expect = require('chai').expect;
+var chai = require('chai');
+var expect = chai.expect;
 var sinon = require('sinon');
+var chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
 
 describe("", () => {
 	it("should", () => {
@@ -9,12 +12,16 @@ describe("", () => {
 
 it("should stub a promise function", () => {
 	sinon.stub(testFile, 'functionToBeStubbed').returns(Promise.resolve("whatever"))
-	return testFile.function().then(result => {
-		expect(result).to.equal("something");	
-	});
+	return expect(testFile.function()).to.eventually.
+});
+
+it("should stub a rejected promise function", () => {
+	sinon.stub(testFile, 'functionToBeStubbed').returns(Promise.reject(new Error("this new error part is optional")))
+	return expect(testFile.function()).to.be.rejected;
+	OR return expect(testFile.function()).to.be.rejectedWith("error message");
 });
 
 it("should stub a synchronous function", () => {
 	sinon.stub(testFile, 'functionToBeStubbed').returns("whatever")
-	expect(testFile.function).to.equal("something");
+	expect(testFile.function).to.
 });
