@@ -1,6 +1,10 @@
-var expect = require('chai').expect;
+var chai = require('chai');
+var expect = chai.expect;
 var sinon = require('sinon');
-var hue = require("../lib/hueApi.js");
+var chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+var hue = require('../lib/HueApi.js');
+var rest = require('../lib/restApi.js');
 
 describe("Hue Lights API", () => {
 	describe("Get Continuous", () => {
@@ -57,6 +61,33 @@ describe("Hue Lights API", () => {
 			return hue.setOnStatus(1, {}).then(result => {
 				expect(result).to.deep.equal({});
 			}, reason => {throw new Error(reason)});
+		});
+	});
+
+	describe("Get Current State", () => {
+		beforeEach(() => { 
+			options = sinon.stub(rest, "Options");
+			request = sinon.stub(rest, "request");
+		});
+		afterEach(() => {
+			options.restore();
+			request.restore();
+		})
+
+		it("should have a getCurrentState function", () => {
+			expect(hue.getCurrentState).to.exist;
+		});
+
+		it("should return the current state of a light", () => {
+			options.returns({});
+			request.returns(Promise.resolve({"state":{"foo":"bar"}}));
+			return expect(hue.getCurrentState(1)).to.eventually.deep.equal({"foo":"bar"});
+		});
+
+		it("should return error for non-existent light", () => {
+			options.returns({});
+			request.returns(Promise.reject());
+			return expect(hue.getCurrentState(1)).to.be.rejected;
 		});
 	});
 });
