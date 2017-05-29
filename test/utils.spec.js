@@ -1,4 +1,9 @@
-var expect = require("chai").expect;
+var chai = require('chai');
+var expect = chai.expect;
+var sinon = require('sinon');
+var chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+
 var utils = require('../lib/utils.js');
 
 describe("Utility Functions", () => {
@@ -42,9 +47,12 @@ describe("Utility Functions", () => {
 
 		it("should pluralize asynchonous functions", () => {
 			var asyncfunc = function(num) { return new Promise((res,rej) => res("foo" + num))}
-			return utils.pluralize(asyncfunc, [1,2,3,4], {}).then(result => {
-				expect(result).to.deep.equal(['foo1','foo2','foo3','foo4'])
-			}, reason => { throw new Error(reason)});
+			return expect(utils.pluralize(asyncfunc, [1,2,3,4], {})).to.eventually.deep.equal(['foo1','foo2','foo3','foo4']);
+		});
+
+		it("should return rejected promise if problem happens with 'method'", () => {
+			var method = function() {return Promise.reject("reason")}
+			return expect(utils.pluralize(method, [1,2,3]), {}).to.be.rejectedWith('reason');
 		});
 	});
 

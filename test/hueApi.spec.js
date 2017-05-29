@@ -184,6 +184,7 @@ describe("Hue Lights API", () => {
 			find.restore();
 			setLightState.restore();
 			getLights.restore();
+			pluralize.restore();
 		});
 
 		it("should exist", () => {
@@ -203,9 +204,58 @@ describe("Hue Lights API", () => {
 		});
 
 		it("should return rejected promise if problem with mongo.find", () => {
-			find.reject(new Error("reason"));
+			find.rejects(new Error("reason"));
 
 			return expect(hue.on("foo")).to.be.rejectedWith("reason");
+		});
+
+		it("should return rejected promise if problem with pluralize", () => {
+			find.resolves({"bri":100});
+			getLights.resolves([1,2,3])
+			pluralize = sinon.stub(utils, "pluralize").rejects(new Error("reason"));
+
+			return expect(hue.on("foo")).to.be.rejectedWith('reason');
+		});
+	});
+
+	describe("Set Scene", () => {
+		beforeEach(() => {
+			find = sinon.stub(mongo, "find");
+			setLightState = sinon.stub(hue, "setLightState");
+		});
+		afterEach(() => {
+			find.restore();
+			setLightState.restore();
+		});
+		it("should exist", () => {
+			expect(hue.setScene).to.exist;
+		});
+
+		it("should be a function", () => {
+			expect(hue.setScene).to.be.a('function');
+		});
+
+		it("should set a scene", () => {
+			find.resolves({"lights": [{"id":1,"body":{}}, {"id":2,"body":{}}]});
+			setLightState.resolves("200 OK");
+
+			expect(hue.setScene("foo")).to.eventually.equal("200 OK");
+		});
+
+		it("should reject a promise if problem with second light", () => {
+			find.resolves({"lights": [{"id":1,"body":{}}, {"id":2,"body":{}}]});
+			setLightState.onFirstCall().resolves("200 OK");
+			setLightState.onSecondCall().rejects(new Error("reason"));
+
+			hue.setScene("Foo").then(
+	result => {
+		console.log("test", result);
+		resolve(result);
+	}, err => {
+		console.log("test", err);
+		reject(err);
+	})
+			//expect(hue.setScene("foo")).to.be.rejectedWith("reason");
 		});
 	});
 });
