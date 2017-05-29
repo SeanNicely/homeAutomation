@@ -21,7 +21,7 @@ app.get('/continuous', (req, res) => {
 
 	sc.stopTimer(req.query.room);
 
-	hue.setRoomStatus(req.query.room)
+	hue.setOnStatusForRoom(req.query.room)
 	.then(body => {
 		body = hue.getContinuous(body, req.query.attribute, req.query.percentage);
 		hue.pluralize(hue.setLightState, lights, body)
@@ -39,7 +39,7 @@ app.get('/color', (req, res) => {
 
 	sc.stopTimer(req.query.room);
 
-	hue.setRoomStatus(req.query.room)
+	hue.setOnStatusForRoom(req.query.room)
 	.then(body => mongo.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
 	.then(body => hue.pluralize(hue.setLightState, lights, body), err => rest.respond(res, problemString, err))
 	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
