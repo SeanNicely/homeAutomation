@@ -25,3 +25,20 @@ it("should stub a synchronous function", () => {
 	sinon.stub(testFile, 'functionToBeStubbed').returns("whatever")
 	expect(testFile.function).to.
 });
+
+//Expanded resolve, reject
+.then(
+	result => {
+		console.log("function", result);
+		resolve(result);
+	}, err => {
+		console.log("function", err);
+		reject(err);
+	})
+
+.then(
+	result => {
+		console.log("test", result);
+	}, err => {
+		console.log("test", err);
+	})
