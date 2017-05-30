@@ -239,23 +239,15 @@ describe("Hue Lights API", () => {
 			find.resolves({"lights": [{"id":1,"body":{}}, {"id":2,"body":{}}]});
 			setLightState.resolves("200 OK");
 
-			expect(hue.setScene("foo")).to.eventually.equal("200 OK");
+			return expect(hue.setScene("foo")).to.eventually.deep.equal(["200 OK", "200 OK"]);
 		});
 
 		it("should reject a promise if problem with second light", () => {
 			find.resolves({"lights": [{"id":1,"body":{}}, {"id":2,"body":{}}]});
 			setLightState.onFirstCall().resolves("200 OK");
 			setLightState.onSecondCall().rejects(new Error("reason"));
-
-			hue.setScene("Foo").then(
-	result => {
-		console.log("test", result);
-		resolve(result);
-	}, err => {
-		console.log("test", err);
-		reject(err);
-	})
-			//expect(hue.setScene("foo")).to.be.rejectedWith("reason");
+			
+			return expect(hue.setScene("foo")).to.be.rejectedWith("reason");
 		});
 	});
 });
