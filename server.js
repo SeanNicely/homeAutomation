@@ -73,7 +73,7 @@ app.get('/off', (req, res) => {
 	sc.setRoomState(req.query.room, "off");
 	let lights = mongo.getLights(req.query.room);
 	sc.stopTimer(req.query.room);
-	hue.pluralize(hue.setLightState, lights, {"on":false})
+	pluralize(hue.setLightState, lights, {"on":false})
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
 		err => rest.respond(res, "Problem turning off " + req.query.room + " lights", err)
