@@ -41,13 +41,17 @@ describe("Utility Functions", () => {
 	});
 
 	describe("Pluralize", () => {
+		var asyncfunc = function(num) { return new Promise((res,rej) => res("foo" + num))}
 		it ("should have a pluralize function", () => {
 			expect(utils.pluralize).to.exist;
 		});
 
 		it("should pluralize asynchonous functions", () => {
-			var asyncfunc = function(num) { return new Promise((res,rej) => res("foo" + num))}
 			return expect(utils.pluralize(asyncfunc, [1,2,3,4], {})).to.eventually.deep.equal(['foo1','foo2','foo3','foo4']);
+		});
+
+		it("should pluralize bodyless functions", () => {
+			return expect(utils.pluralize(asyncfunc, [{"id":1,"bar":2},{"id":3,"bar":4}])).to.eventually.deep.equal['foo1','foo3']
 		});
 
 		it("should return rejected promise if problem happens with 'method'", () => {
