@@ -250,4 +250,83 @@ describe("Hue Lights API", () => {
 			return expect(hue.setScene("foo")).to.be.rejectedWith("reason");
 		});
 	});
+
+	describe("Clock", () => {
+		beforeEach(() => {
+			clockUpdate = sinon.stub(hue, "clockUpdate");
+			cpuClock = sinon.useFakeTimers();
+			logger = sinon.stub(utils, "logger");
+		});
+		afterEach(() => {
+			clockUpdate.restore();
+			cpuClock.restore();
+			logger.restore();
+		});
+
+		it("should exist", () => {
+			expect(hue.clock).to.exist;
+		});
+
+		it("should be a function", () => {
+			expect(hue.clock).to.be.a('function');
+		});
+
+		it("should initially set the living room clock", () => {
+			clockUpdate.resolves("200 OK");
+
+			return expect(hue.clock()).to.eventually.equal("200 OK");
+		});
+
+		it("should call it initially, at the top of the next minute, and subsequent minutes", () => {
+			clockUpdate.resolves("200 OK");
+
+			return hue.clock().then(() => {
+				expect(clockUpdate.calledOnce).to.be.true;
+				expect(clockUpdate.calledTwice).to.be.false;
+				expect(clockUpdate.calledThrice).to.be.false;
+
+				cpuClock.tick(60000);
+				expect(clockUpdate.calledTwice).to.be.true;
+				expect(clockUpdate.calledThrice).to.be.false;
+
+				cpuClock.tick(60000);
+				expect(clockUpdate.calledThrice).to.be.true;
+			});
+		});
+
+		it("should reject promise if problem with initial setting", () => {
+			clockUpdate.rejects(new Error("reason"));
+			return expect(hue.clock()).to.be.rejectedWith("reason");
+		});
+
+	});
+
+	describe("Clock Update", () => {
+		beforeEach(() => {
+			getColorXY = sinon.stub(mongo, "getColorXY");
+			setLightState = sinon.stub(hue, "setLightState");
+			find = sinon.stub(mongo, "find");
+		});
+		afterEach(() => {
+			getColorXY.restore();
+			setLightState.restore();
+			find.restore();
+		});
+
+		it("should exist", () => {
+			expect(hue.clockUpdate).to.exist;
+		});
+
+		it("should be a function", () => {
+			expect(hue.clockUpdate).to.be.a('function');
+		});
+
+		it("should update the clock", () => {
+			getColorXY.resolves({});
+			setLightState.resolves("200 OK");
+			find.resolves({});
+
+			return expect(hue.clockUpdate(new Date())).to.eventually.deep.equal(["200 OK", "200 OK", "200 OK"])
+		});
+	});
 });
