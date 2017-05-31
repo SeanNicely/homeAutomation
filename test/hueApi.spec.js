@@ -255,7 +255,7 @@ describe("Hue Lights API", () => {
 		beforeEach(() => {
 			clockUpdate = sinon.stub(hue, "clockUpdate");
 			cpuClock = sinon.useFakeTimers();
-			logger = sinon.stub(utils, "logger");
+			logger = sinon.stub(utils, "logger").callsFake(() => console.log("called"));
 		});
 		afterEach(() => {
 			clockUpdate.restore();
@@ -328,5 +328,34 @@ describe("Hue Lights API", () => {
 
 			return expect(hue.clockUpdate(new Date())).to.eventually.deep.equal(["200 OK", "200 OK", "200 OK"])
 		});
+
+		it("should reject a promise if problem setting a light", () => {
+			getColorXY.resolves({});
+			find.resolves({});
+			setLightState.resolves("200 OK");
+			setLightState.onThirdCall().rejects(new Error("problem setting light"));
+
+			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("problem setting light");
+		});
+
+		it("should reject a promise if problem getting color", () => {
+			getColorXY.resolves({});
+			getColorXY.onSecondCall().rejects(new Error("problem getting color"));
+			find.resolves({});
+			setLightState.resolves("200 OK");
+
+			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("problem getting color");
+		});
+
+		it("should reject a promise if problem with getting hourData", () => {
+			getColorXY.resolves({});
+			find.resolves({});
+			find.onFirstCall().rejects(new Error("could not retrieve hourData"));
+			setLightState.resolves("200 OK");
+
+			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("could not retrieve hourData");
+		});
+
+
 	});
 });
