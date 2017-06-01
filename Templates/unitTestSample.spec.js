@@ -5,6 +5,19 @@ var chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 
 describe("", () => {
+	beforeEach(() => {
+
+	});
+	afterEach(() => {
+
+	});
+	it("should exist", () => {
+		expect().to.exist;
+	});
+	it("should be a function", () => {
+		expect().to.be.a('function');
+	});
+
 	it("should", () => {
 		expect().to.
 	});
