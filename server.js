@@ -17,14 +17,14 @@ app.listen(3000, () => {
 app.get('/continuous', (req, res) => {
 	sc.setRoomState(req.query.room, "custom");
 	let percentage = parseInt(req.query.percentage);
-	let lights = mongo.getLights(req.query.room);
 
 	sc.stopTimer(req.query.room);
 
-	hue.setOnStatusForRoom(req.query.room)
-	.then(body => {
-		body = hue.getContinuous(body, req.query.attribute, req.query.percentage);
-		hue.pluralize(hue.setLightState, lights, body)
+	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room, {})]).then(result => {
+		lights = result[0];
+		body = result[1];
+		body = hue.getContinuous(req.query.attribute, req.query.percentage, body);
+		pluralize(hue.setLightState, lights, body)
 	})
 	.then(
 		response => rest.respond(res, req.query.room + " lights set to " + req.query.percentage + " " + req.query.attribute),
@@ -34,14 +34,17 @@ app.get('/continuous', (req, res) => {
 
 app.get('/color', (req, res) => {
 	sc.setRoomState(req.query.room, "custom");
-	let lights = mongo.getLights(req.query.room);
 	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
 
 	sc.stopTimer(req.query.room);
 
-	hue.setOnStatusForRoom(req.query.room)
-	.then(body => mongo.getColorXY(req.query.color, body), err => rest.respond(res, problemString, err))
-	.then(body => hue.pluralize(hue.setLightState, lights, body), err => rest.respond(res, problemString, err))
+	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room), mongo.getColorXY(req.query.color)]).then(result => {
+		lights = result[0];
+		body = {};
+		if (result[1]) body.on = result[1].on;
+		body.xy = result[2];
+		pluralize(hue.setLightState, lights, body)
+	})
 	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
 
@@ -70,9 +73,9 @@ app.get('/on', (req, res) => {
 app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
 	sc.setRoomState(req.query.room, "off");
-	let lights = mongo.getLights(req.query.room);
 	sc.stopTimer(req.query.room);
-	pluralize(hue.setLightState, lights, {"on":false})
+	mongo.getLights(req.query.room)
+	.then(lights => pluralize(hue.setLightState, lights, {"on":false}))
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
 		err => rest.respond(res, "Problem turning off " + req.query.room + " lights", err)

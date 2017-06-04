@@ -19,25 +19,31 @@ describe("Hue Lights API", () => {
 		})
 
 		it("should convert percentage to brightness value", () => {
-			expect(hue.getContinuous({}, "brightness", 0)).to.deep.equal({"bri":0});
-			expect(hue.getContinuous({}, "brightness", 50)).to.deep.equal({"bri":127});
-			expect(hue.getContinuous({}, "brightness", 100)).to.deep.equal({"bri":255});
+			expect(hue.getContinuous("brightness", 0, {"foo":"bar"})).to.deep.equal({"foo":"bar", "bri":0});
+			expect(hue.getContinuous("brightness", 50, {"foo":"bar"})).to.deep.equal({"foo":"bar", "bri":127});
+			expect(hue.getContinuous("brightness", 100, {"foo":"bar"})).to.deep.equal({"foo":"bar", "bri":255});
 		});
 
 		it("should convert percentage to color temperature value", () => {
-			expect(hue.getContinuous({}, "color temperature", 0)).to.deep.equal({"ct":153});
-			expect(hue.getContinuous({}, "color temperature", 50)).to.deep.equal({"ct":326});
-			expect(hue.getContinuous({}, "color temperature", 100)).to.deep.equal({"ct":500});
+			expect(hue.getContinuous("color temperature", 0, {"foo":"bar"})).to.deep.equal({"foo":"bar", "ct":153});
+			expect(hue.getContinuous("color temperature", 50, {"foo":"bar"})).to.deep.equal({"foo":"bar", "ct":326});
+			expect(hue.getContinuous("color temperature", 100, {"foo":"bar"})).to.deep.equal({"foo":"bar", "ct":500});
 		});
 
 		it("should convert percentage to saturation value", () => {
-			expect(hue.getContinuous({}, "saturation", 0)).to.deep.equal({"sat":0});
-			expect(hue.getContinuous({}, "saturation", 50)).to.deep.equal({"sat":127});
-			expect(hue.getContinuous({}, "saturation", 100)).to.deep.equal({"sat":255});
+			expect(hue.getContinuous("saturation", 0, {"foo":"bar"})).to.deep.equal({"foo":"bar", "sat":0});
+			expect(hue.getContinuous("saturation", 50, {"foo":"bar"})).to.deep.equal({"foo":"bar", "sat":127});
+			expect(hue.getContinuous("saturation", 100, {"foo":"bar"})).to.deep.equal({"foo":"bar", "sat":255});
+		});
+
+		it("should return only the attribute object without a body if no body is provided", () => {
+			expect(hue.getContinuous("brightness", 50)).to.deep.equal({"bri":127});
+			expect(hue.getContinuous("color temperature", 50)).to.deep.equal({"ct":326});
+			expect(hue.getContinuous("saturation", 50)).to.deep.equal({"sat":127});
 		});
 
 		it("should throw an error if attribute is invalid", () => {
-			expect(hue.getContinuous({}, "foo", 0)).to.deep.equal(new Error("foo is not a valid room"))
+			expect(hue.getContinuous("foo", 0, {})).to.deep.equal(new Error("foo is not a valid room"))
 		});
 	});
 
@@ -82,68 +88,96 @@ describe("Hue Lights API", () => {
 		});
 	});
 
-	describe("Set On Status For Room", () => {
+	describe("Get On Status For Room", () => {
 		beforeEach(() => {
 			getCurrentState = sinon.stub(hue, "getCurrentState");
-			getLights = sinon.stub(mongo, "getLights").returns([1,2,3]);
+			getLights = sinon.stub(mongo, "getLights").resolves([1,2,3]);
+			pluralize = sinon.stub(utils, 'pluralize');
 		});
 		afterEach(() => {
 			getCurrentState.restore();
 			getLights.restore();
+			pluralize.restore();
 		});
 
 		it("should exist", () => {
-			expect(hue.setOnStatusForRoom).to.exist;
+			expect(hue.getOnStatusForRoom).to.exist;
 		});
 
 		it("should set body 'on' property to true if a light is off", () => {
 			getCurrentState.onFirstCall().resolves({"on":true});
 			getCurrentState.onSecondCall().resolves({"on":true});
 			getCurrentState.resolves({"on":false});
+			pluralize.restore();
 
-			return expect(hue.setOnStatusForRoom("foo")).to.eventually.deep.equal({"on":true});
+			return expect(hue.getOnStatusForRoom("foo", {"foo":"bar"})).to.eventually.deep.equal({"foo":"bar", "on":true});
 		});
 
 		it("should set body 'on' property to true if all lights are off", () => {
 			getCurrentState.resolves({"on":false});
+			pluralize.restore();
 
-			return expect(hue.setOnStatusForRoom("foo")).to.eventually.deep.equal({"on":true});
+			return expect(hue.getOnStatusForRoom("foo", {"foo":"bar"})).to.eventually.deep.equal({"foo":"bar", "on":true});
 		});
 
-		it("should return empty body if all lights are on", () => {
+		it("should return original body if all lights are on", () => {
 			getCurrentState.resolves({"on":true});
+			pluralize.restore();
 
-			return expect(hue.setOnStatusForRoom("foo")).to.eventually.deep.equal({});
+			return expect(hue.getOnStatusForRoom("foo", {"foo":"bar"})).to.eventually.deep.equal({"foo":"bar"});
+		});
+
+		it("should return only the 'on' property object if not given a body", () => {
+			getCurrentState.resolves({"on":false});
+			pluralize.restore();
+
+			return expect(hue.getOnStatusForRoom("foo")).to.eventually.deep.equal({"on":true});
+		});
+
+		it("should return null if all lights are on and no body is given", () => {
+			getCurrentState.resolves({"on":true});
+			pluralize.restore();
+
+			return expect(hue.getOnStatusForRoom("foo")).to.eventually.be.null;
 		});
 
 		it("should return a rejected promise if there's a problem with pluralize", () => {
-			pluralize = sinon.stub(utils, 'pluralize').rejects(new Error("reason"));
-
-			return expect(hue.setOnStatusForRoom("foo")).to.be.rejectedWith("reason").then(pluralize.restore());
+			pluralize.rejects(new Error("reason"));
+			return expect(hue.getOnStatusForRoom("foo")).to.be.rejectedWith("reason");
 		});
 	});
 
-	describe("Set On Status", () => {
+	describe("Get On Status", () => {
 		beforeEach(() => { stub = sinon.stub(hue, "getCurrentState") });
 		afterEach(() => { stub.restore() });
 
 		it("should exist", () => {
-			expect(hue.setOnStatus).to.exist;
+			expect(hue.getOnStatus).to.exist;
 		});	
 
 		it("should insert a property for on:true if light is off", () => {
 			stub.resolves({"state":{"on":false}});
-			return expect(hue.setOnStatus(1, {})).to.eventually.deep.equal({"on":true});
+			return expect(hue.getOnStatus(1, {"foo":"bar"})).to.eventually.deep.equal({"foo":"bar", "on":true});
 		});
 
-		it("should return an empty object if light is on", () => {
+		it("should return the original object if light is on", () => {
 			stub.resolves({"state":{"on":true}});
-			return expect(hue.setOnStatus(1, {})).to.eventually.deep.equal({});
+			return expect(hue.getOnStatus(1, {"foo":"bar"})).to.eventually.deep.equal({"foo":"bar"});
+		});
+
+		it("should return the 'on' property object if light is off", () => {
+			stub.resolves({"state":{"on":false}});
+			return expect(hue.getOnStatus(1)).to.eventually.deep.equal({"on":true});
+		});
+
+		it("should return null if light is on and no body is provided", () => {
+			stub.resolves({"state":{"on":true}});
+			return expect(hue.getOnStatus(1)).to.eventually.be.null;
 		});
 
 		it("should return rejected promise if there's a problem with getCurrentState", () => {
 			stub.rejects(new Error("reason"));
-			return expect(hue.setOnStatus(1, {})).to.be.rejectedWith("reason");
+			return expect(hue.getOnStatus(1, {})).to.be.rejectedWith("reason");
 		});
 	});
 
@@ -361,5 +395,7 @@ describe("Hue Lights API", () => {
 
 			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("could not retrieve hourData");
 		});
+
+
 	});
 });

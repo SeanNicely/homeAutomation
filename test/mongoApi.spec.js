@@ -95,22 +95,22 @@ describe("Mongo API", () => {
 
 	describe("Get Lights", ()=> {
 		it("should exist", () => {
-			expect(mongo.getLightsNew).to.exist;
+			expect(mongo.getLights).to.exist;
 		});
 		it("should be a function", () => {
-			expect(mongo.getLightsNew).to.be.a('function');
+			expect(mongo.getLights).to.be.a('function');
 		});
 
 		it("should get an array of lights for a room", () => {
-			return expect(mongo.getLightsNew("living")).to.eventually.deep.equal([1,2,4])
+			return expect(mongo.getLights("living")).to.eventually.deep.equal([1,2,4])
 		});
 
 		it("should normalize the room name before searching", () => {
-			return expect(mongo.getLightsNew("LivINg RooM")).to.eventually.deep.equal([1,2,4])
+			return expect(mongo.getLights("LivINg RooM")).to.eventually.deep.equal([1,2,4])
 		});
 
 		it("should return an error if room does not exist", () => {
-			return expect(mongo.getLightsNew("asdf")).to.be.rejectedWith("room asdf does not exist")
+			return expect(mongo.getLights("asdf")).to.be.rejectedWith("room asdf does not exist")
 		});
 	});
 
