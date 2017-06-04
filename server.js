@@ -54,13 +54,12 @@ app.get('/scene', (req, res) => {
 app.get('/on', (req, res) => {
 	sc.setRoomState(req.query.room, "standardOn");
   	switch(normalize(req.query.room)) {
-	    case "livingroom":
     	case "living":
       		res.redirect('/clock');
       		break;
     	case "all":
-      		hue.on("bedroom");
-      		hue.on("bathroom");
+      		hue.on("bed");
+      		hue.on("bath");
       		res.redirect('/clock');
       		break;
     	default:

@@ -123,7 +123,11 @@ describe("Mongo API", () => {
 		});
 
 		it("should get a scene", () => {
-			return expect(mongo.getScene("exampleScene")).to.eventually.deep.equal([{"id" : 5,"body" : {"on" : false}}])
+			return expect(mongo.getScene("examplescene")).to.eventually.deep.equal([{"id" : 5,"body" : {"on" : false}}])
+		});
+
+		it("should normalize the room name before searching", () => {
+			return expect(mongo.getScene("   ExaMPle sCEne   ")).to.eventually.deep.equal([{"id" : 5,"body" : {"on" : false}}])
 		});
 
 		it("should return an error if scene not found", () => {

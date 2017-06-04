@@ -176,12 +176,12 @@ describe("Hue Lights API", () => {
 
 	describe("On", () => {
 		beforeEach(() => {
-			find = sinon.stub(mongo, "find");
+			getHourData = sinon.stub(mongo, "getHourData");
 			setLightState = sinon.stub(hue, "setLightState");
 			getLights = sinon.stub(mongo, "getLights");
 		});
 		afterEach(() => {
-			find.restore();
+			getHourData.restore();
 			setLightState.restore();
 			getLights.restore();
 			pluralize.restore();
@@ -196,7 +196,7 @@ describe("Hue Lights API", () => {
 		});
 
 		it("should turn on the lights in a room", () => {
-			find.resolves({"bri":100});
+			getHourData.resolves({"bri":100});
 			setLightState.resolves("200 OK");
 			getLights.returns([1,2,3]);
 
@@ -204,13 +204,13 @@ describe("Hue Lights API", () => {
 		});
 
 		it("should return rejected promise if problem with mongo.find", () => {
-			find.rejects(new Error("reason"));
+			getHourData.rejects(new Error("reason"));
 
 			return expect(hue.on("foo")).to.be.rejectedWith("reason");
 		});
 
 		it("should return rejected promise if problem with pluralize", () => {
-			find.resolves({"bri":100});
+			getHourData.resolves({"bri":100});
 			getLights.resolves([1,2,3])
 			pluralize = sinon.stub(utils, "pluralize").rejects(new Error("reason"));
 
@@ -220,11 +220,11 @@ describe("Hue Lights API", () => {
 
 	describe("Set Scene", () => {
 		beforeEach(() => {
-			find = sinon.stub(mongo, "find");
+			getScene = sinon.stub(mongo, "getScene");
 			setLightState = sinon.stub(hue, "setLightState");
 		});
 		afterEach(() => {
-			find.restore();
+			getScene.restore();
 			setLightState.restore();
 		});
 		it("should exist", () => {
@@ -236,14 +236,14 @@ describe("Hue Lights API", () => {
 		});
 
 		it("should set a scene", () => {
-			find.resolves([{"id":1,"body":{}}, {"id":2,"body":{}}]);
+			getScene.resolves([{"id":1,"lights":{}}, {"id":2,"lights":{}}]);
 			setLightState.resolves("200 OK");
 
 			return expect(hue.setScene("foo")).to.eventually.deep.equal(["200 OK", "200 OK"]);
 		});
 
 		it("should reject a promise if problem with second light", () => {
-			find.resolves([{"id":1,"body":{}}, {"id":2,"body":{}}]);
+			getScene.resolves([{"id":1,"body":{}}, {"id":2,"body":{}}]);
 			setLightState.onFirstCall().resolves("200 OK");
 			setLightState.onSecondCall().rejects(new Error("reason"));
 			
@@ -305,12 +305,14 @@ describe("Hue Lights API", () => {
 		beforeEach(() => {
 			getColorXY = sinon.stub(mongo, "getColorXY");
 			setLightState = sinon.stub(hue, "setLightState");
-			find = sinon.stub(mongo, "find");
+			getHourData = sinon.stub(mongo, "getHourData");
+			getMinuteData = sinon.stub(mongo, "getMinuteData");
 		});
 		afterEach(() => {
 			getColorXY.restore();
 			setLightState.restore();
-			find.restore();
+			getHourData.restore();
+			getMinuteData.restore();
 		});
 
 		it("should exist", () => {
@@ -324,14 +326,16 @@ describe("Hue Lights API", () => {
 		it("should update the clock", () => {
 			getColorXY.resolves({});
 			setLightState.resolves("200 OK");
-			find.resolves({});
+			getHourData.resolves({});
+			getMinuteData.resolves({});
 
 			return expect(hue.clockUpdate(new Date())).to.eventually.deep.equal(["200 OK", "200 OK", "200 OK"])
 		});
 
 		it("should reject a promise if problem setting a light", () => {
 			getColorXY.resolves({});
-			find.resolves({});
+			getHourData.resolves({});
+			getMinuteData.resolves({});
 			setLightState.resolves("200 OK");
 			setLightState.onThirdCall().rejects(new Error("problem setting light"));
 
@@ -341,7 +345,8 @@ describe("Hue Lights API", () => {
 		it("should reject a promise if problem getting color", () => {
 			getColorXY.resolves({});
 			getColorXY.onSecondCall().rejects(new Error("problem getting color"));
-			find.resolves({});
+			getHourData.resolves({});
+			getMinuteData.resolves({});
 			setLightState.resolves("200 OK");
 
 			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("problem getting color");
@@ -349,13 +354,12 @@ describe("Hue Lights API", () => {
 
 		it("should reject a promise if problem with getting hourData", () => {
 			getColorXY.resolves({});
-			find.resolves({});
-			find.onFirstCall().rejects(new Error("could not retrieve hourData"));
+			getHourData.resolves({});
+			getHourData.onFirstCall().rejects(new Error("could not retrieve hourData"));
+			getMinuteData.resolves({})
 			setLightState.resolves("200 OK");
 
 			return expect(hue.clockUpdate(new Date())).to.be.rejectedWith("could not retrieve hourData");
 		});
-
-
 	});
 });
