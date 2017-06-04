@@ -61,12 +61,15 @@ app.get('/on', (req, res) => {
       		res.redirect('/clock');
       		break;
     	case "all":
-      		hue.on("bed");
-      		hue.on("bath");
-      		res.redirect('/clock');
+    		Promise.all([hue.on("bed"), hue.on("bath"), hue.clock()])
+    		.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
+      		//hue.on("bed");
+      		//hue.on("bath");
+      		//res.redirect('/clock');
       		break;
     	default:
       		hue.on(normalize(req.query.room))
+      		.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
     }
 });
 
