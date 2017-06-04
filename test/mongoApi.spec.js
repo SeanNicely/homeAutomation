@@ -168,4 +168,25 @@ describe("Mongo API", () => {
 			return expect(mongo.getMinuteData(100)).to.be.rejectedWith("Minute 100 is outside of range");
 		});
 	});
+
+	describe("Get Light Type", () => {
+		it("should exist", () => {
+			expect(mongo.getLightType).to.exist;
+		});
+		it("should be a function", () => {
+			expect(mongo.getLightType).to.be.a('function');
+		});
+
+		it("should get the light type for a color light", () => {
+			return expect(mongo.getLightType(1)).to.eventually.equal("Extended color light");
+		});
+
+		it("should get the light type for a white light", () => {
+			return expect(mongo.getLightType(2)).to.eventually.equal("Color temperature light");
+		});
+
+		it("should return an error if light does not exist", () => {
+			return expect(mongo.getLightType(100)).to.be.rejectedWith("Light 100 not found");
+		});
+	});
 });
