@@ -39,32 +39,32 @@ describe("Mongo API", () => {
 
 	describe("Set Room Status", () => {
 		it("should exist", () => {
-			expect(mongo.setRoomStatus).to.exist;
+			expect(mongo.saveRoomStatus).to.exist;
 		});
 		it("should be a function", () => {
-			expect(mongo.setRoomStatus).to.be.a('function');
+			expect(mongo.saveRoomStatus).to.be.a('function');
 		});
 
 		// This case is mostly so I don't have to manually reset things
 		it("should clear the current value", () => {
-			return expect(mongo.setRoomStatus("bath", "")).to.eventually.equal("200 OK");
+			return expect(mongo.saveRoomStatus("bath", "")).to.eventually.equal("200 OK");
 		});
 
 		it("should return a success message if successful", () => {
-			return expect(mongo.setRoomStatus("bath", "randVal")).to.eventually.equal("200 OK");
+			return expect(mongo.saveRoomStatus("bath", "randVal")).to.eventually.equal("200 OK");
 		});
 
 		it("should resolve if value is already set to whatever you're trying to set it to", () => {
-			return expect(mongo.setRoomStatus("bath", "randVal")).to.eventually.equal("Value already matches");
+			return expect(mongo.saveRoomStatus("bath", "randVal")).to.eventually.equal("Value already matches");
 		});
 
 		it("should normalize the room name before updating", () => {
-			return expect(mongo.setRoomStatus("Bath RooM", "randVal")).to.eventually.equal("Value already matches");
+			return expect(mongo.saveRoomStatus("Bath RooM", "randVal")).to.eventually.equal("Value already matches");
 		});
 
 
 		it("should return a 'no status' message if room doesn't exist", () => {
-			return expect(mongo.setRoomStatus("asdf", "ghjk")).to.be.rejectedWith("mongoApi.update says Update failed");
+			return expect(mongo.saveRoomStatus("asdf", "ghjk")).to.be.rejectedWith("mongoApi.update says Update failed");
 		});
 	});
 

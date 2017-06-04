@@ -11,6 +11,7 @@ var app = express();
 
 app.listen(3000, () => {
 	console.log('Light Controller listening on port 3000!')
+	sc.loadRoomStatuses();
 });
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
@@ -63,9 +64,6 @@ app.get('/on', (req, res) => {
     	case "all":
     		Promise.all([hue.on("bed"), hue.on("bath"), hue.clock()])
     		.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
-      		//hue.on("bed");
-      		//hue.on("bath");
-      		//res.redirect('/clock');
       		break;
     	default:
       		hue.on(normalize(req.query.room))
@@ -86,6 +84,7 @@ app.get('/off', (req, res) => {
 });
 
 app.get('/clock', (req, res) => {
+	sc.setRoomState('living', "clock");
 	hue.clock()
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
