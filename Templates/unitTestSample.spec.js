@@ -21,7 +21,7 @@ describe("", () => {
 	it("should", () => {
 		expect().to.
 	});
-})
+});
 
 it("should stub a promise function", () => {
 	sinon.stub(testFile, 'functionToBeStubbed').returns(Promise.resolve("whatever"))
