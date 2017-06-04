@@ -37,9 +37,9 @@ describe("Hue Lights API", () => {
 		});
 
 		it("should return only the attribute object without a body if no body is provided", () => {
-			expect(hue.getContinuous("brightness", 50)).to.deep.equal({"bri":127});
-			expect(hue.getContinuous("color temperature", 50)).to.deep.equal({"ct":326});
-			expect(hue.getContinuous("saturation", 50)).to.deep.equal({"sat":127});
+			expect(hue.getContinuous("brightness", 50)).to.equal(127);
+			expect(hue.getContinuous("color temperature", 50)).to.equal(326);
+			expect(hue.getContinuous("saturation", 50)).to.equal(127);
 		});
 
 		it("should throw an error if attribute is invalid", () => {
@@ -213,12 +213,14 @@ describe("Hue Lights API", () => {
 			getHourData = sinon.stub(mongo, "getHourData");
 			setLightState = sinon.stub(hue, "setLightState");
 			getLights = sinon.stub(mongo, "getLights");
+			getLightType = sinon.stub(mongo, "getLightType");
 		});
 		afterEach(() => {
 			getHourData.restore();
 			setLightState.restore();
 			getLights.restore();
 			pluralize.restore();
+			getLightType.restore();
 		});
 
 		it("should exist", () => {
@@ -232,7 +234,9 @@ describe("Hue Lights API", () => {
 		it("should turn on the lights in a room", () => {
 			getHourData.resolves({"bri":100});
 			setLightState.resolves("200 OK");
-			getLights.returns([1,2,3]);
+			getLights.resolves([1,2,3]);
+			getLightType.resolves("Color temperature light");
+			getLightType.onSecondCall().resolves("Extended color light");
 
 			return expect(hue.on("foo")).to.eventually.deep.equal(["200 OK", '200 OK', '200 OK']);
 		});
