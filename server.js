@@ -92,7 +92,7 @@ app.get('/clock', (req, res) => {
 app.get('/nightstand', (req, res) => {
 	sc.stopTimer('bedroom');
 	switch(sc.getRoomState('bedroom')) {
-		case "bedroomnight":
+		case "night":
 			sc.setRoomState('bedroom', "almostoff");
 			hue.setLightState(6, {"bri": 1})
 			.then(
@@ -104,11 +104,11 @@ app.get('/nightstand', (req, res) => {
 			res.redirect('off');
 			break;
 		default:
-			sc.setRoomState('bedroom', "bedroomnight");
-			hue.setScene("bedroomnight")
+			sc.setRoomState('bedroom', "night");
+			hue.setScene("night")
 			.then(
-				resposne => rest.respond(res, "set scene to bedroomnight"),
-				err => rest.respond(res, "Error occured setting to bedroom night", err)
+				resposne => rest.respond(res, "set scene to night"),
+				err => rest.respond(res, "Error occured setting to night", err)
 			);
 	}
 });
