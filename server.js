@@ -21,7 +21,8 @@ app.get('/continuous', (req, res) => {
 
 	sc.stopTimer(req.query.room);
 
-	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room, {})]).then(result => {
+	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room, {})]).then
+	(result => {
 		lights = result[0];
 		body = result[1];
 		body = hue.getContinuous(req.query.attribute, req.query.percentage, body);
@@ -110,6 +111,16 @@ app.get('/nightstand', (req, res) => {
 				resposne => rest.respond(res, "set scene to night"),
 				err => rest.respond(res, "Error occured setting to night", err)
 			);
+	}
+});
+
+app.get('/toggle', (req, res) => {
+	let room = req.query.room;
+
+	if (sc.getRoomState !== "off") {
+		hue.off(room)
+	} else {
+		hue.on(room)
 	}
 });
 
