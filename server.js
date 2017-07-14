@@ -14,6 +14,15 @@ app.listen(3000, () => {
 	sc.loadRoomStatuses();
 });
 
+app.get('/statecenter', (req, res) => {
+	var message = "";
+	message += "\n\n### Living Room ###\n" + JSON.stringify(sc.getRoomState('living')) + '\n' + JSON.stringify(sc.getTimer('living'));
+	message += "\n\n### Bed Room ###\n" + JSON.stringify(sc.getRoomState('bed')) + '\n' + JSON.stringify(sc.getTimer('bed'));
+	message += "\n\n### Bath Room ###\n" + JSON.stringify(sc.getRoomState('bath')) + '\n' + JSON.stringify(sc.getTimer('bath'));
+
+	rest.respond(res, message);
+});
+
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
 	sc.setRoomState(req.query.room, "custom");
@@ -76,12 +85,26 @@ app.get('/off', (req, res) => {
 	req.query.room = req.query.room || "all";
 	sc.setRoomState(req.query.room, "off");
 	sc.stopTimer(req.query.room);
-	mongo.getLights(req.query.room)
-	.then(lights => pluralize(hue.setLightState, lights, {"on":false}))
+	hue.off(req.query.room)
 	.then(
 		response => rest.respond(res, req.query.room + " lights are now off"),
 		err => rest.respond(res, "Problem turning off " + req.query.room + " lights", err)
 	);
+});
+
+app.get('/toggle', (req, res) => {
+	let room = req.query.room;
+
+	if (sc.getRoomState(room) !== "off") {
+		sc.setRoomState(room, "off");
+		hue.off(room)
+		.then(success => rest.respond(res, room + " lights toggled off"), err => rest.respond(res, room + " failed to toggle off", err))
+	} else {
+		sc.setRoomState(room, "standardOn");
+		sc.stopTimer(req.query.room);
+		hue.on(room)
+		.then(success => rest.respond(res, room + " lights toggled on"), err => rest.respond(res, room + " failed to toggle on", err))
+	}
 });
 
 app.get('/clock', (req, res) => {
@@ -114,15 +137,12 @@ app.get('/nightstand', (req, res) => {
 	}
 });
 
-app.get('/toggle', (req, res) => {
-	let room = req.query.room;
-
-	if (sc.getRoomState !== "off") {
-		hue.off(room)
-	} else {
-		hue.on(room)
-	}
-});
+app.get('/currentState', (req, res) => {
+	let lv = sc.getRoomState("living");
+	let bd = sc.getRoomState('bed');
+	let ba = sc.getRoomState('bath');
+	rest.respond(res, lv + " " + bd + " " + ba);
+})
 
 // Catch-all for non-existent routes
 app.use('*', function(req,res) {
