@@ -68,7 +68,7 @@ app.get('/scene', (req, res) => {
 app.get('/on', (req, res) => {
 	sc.setRoomState(req.query.room, "standardOn");
 	sc.stopTimer(req.query.room);
-      	hue.on(normalize(req.query.room))
+      	hue.clock("hour", normalize(req.query.room))
       	.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
 });
 
