@@ -67,18 +67,9 @@ app.get('/scene', (req, res) => {
 
 app.get('/on', (req, res) => {
 	sc.setRoomState(req.query.room, "standardOn");
-  	switch(normalize(req.query.room)) {
-    	case "living":
-      		res.redirect('/clock');
-      		break;
-    	case "all":
-    		Promise.all([hue.on("bed"), hue.on("bath"), hue.clock()])
-    		.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
-      		break;
-    	default:
-      		hue.on(normalize(req.query.room))
-      		.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
-    }
+	sc.stopTimer(req.query.room);
+      	hue.clock("hour", normalize(req.query.room))
+      	.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
 });
 
 app.get('/off', (req, res) => {
@@ -96,20 +87,15 @@ app.get('/toggle', (req, res) => {
 	let room = req.query.room;
 
 	if (sc.getRoomState(room) !== "off") {
-		sc.setRoomState(room, "off");
-		hue.off(room)
-		.then(success => rest.respond(res, room + " lights toggled off"), err => rest.respond(res, room + " failed to toggle off", err))
+		res.redirect('off');
 	} else {
-		sc.setRoomState(room, "standardOn");
-		sc.stopTimer(req.query.room);
-		hue.on(room)
-		.then(success => rest.respond(res, room + " lights toggled on"), err => rest.respond(res, room + " failed to toggle on", err))
+		res.redirect('on');
 	}
 });
 
 app.get('/clock', (req, res) => {
 	sc.setRoomState('living', "clock");
-	hue.clock()
+	hue.clock("minute")
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
 
