@@ -95,7 +95,7 @@ app.get('/toggle', (req, res) => {
 
 app.get('/clock', (req, res) => {
 	sc.setRoomState('living', "clock");
-	hue.clock()
+	hue.clock("minute")
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
 
