@@ -103,7 +103,7 @@ app.get('/nightstand', (req, res) => {
 	sc.stopTimer('bedroom');
 	switch(sc.getRoomState('bedroom')) {
 		case "night":
-			sc.setRoomState('bedroom', "almostoff");
+			sc.setRoomState('all', "almostoff");
 			hue.setLightState(6, {"bri": 1})
 			.then(
 				resposne => rest.respond(res, "almost off"),
@@ -115,6 +115,7 @@ app.get('/nightstand', (req, res) => {
 			break;
 		default:
 			sc.setRoomState('bedroom', "night");
+			sc.setRoomState('bathroom', "night");
 			hue.setScene("night")
 			.then(
 				resposne => rest.respond(res, "set scene to night"),
