@@ -6,7 +6,8 @@ var mongo = require('./lib/mongoApi.js');
 var schedules = require('./lib/schedules.js');
 var normalize = require('./lib/utils.js').normalize
 	, logger = require('./lib/utils.js').logger
-	, pluralize = require('./lib/utils.js').pluralize;
+	, pluralize = require('./lib/utils.js').pluralize
+	, curryIt = require('./lib/utils.js').curryIt;
 var app = express();
 
 app.listen(3000, () => {
@@ -16,9 +17,10 @@ app.listen(3000, () => {
 
 app.get('/statecenter', (req, res) => {
 	var message = "";
-	message += "\n\n### Living Room ###\n" + JSON.stringify(sc.getRoomState('living')) + '\n' + JSON.stringify(sc.getTimer('living'));
-	message += "\n\n### Bed Room ###\n" + JSON.stringify(sc.getRoomState('bed')) + '\n' + JSON.stringify(sc.getTimer('bed'));
-	message += "\n\n### Bath Room ###\n" + JSON.stringify(sc.getRoomState('bath')) + '\n' + JSON.stringify(sc.getTimer('bath'));
+	message += "\n\n### Living Room ###\n" + sc.getRoomState('living') + '\n' + JSON.stringify(sc.getTimer('living'));
+	message += "\n\n### Bed Room ###\n" + sc.getRoomState('bed') + '\n' + JSON.stringify(sc.getTimer('bed'));
+	message += "\n\n### Bath Room ###\n" + sc.getRoomState('bath') + '\n' + JSON.stringify(sc.getTimer('bath'));
+	message += "\n\n### Kitchen ###\n" + sc.getRoomState('kitchen') + '\n' + JSON.stringify(sc.getTimer('kitchen'));
 
 	rest.respond(res, message);
 });
@@ -66,31 +68,43 @@ app.get('/scene', (req, res) => {
 });
 
 app.get('/on', (req, res) => {
-	sc.setRoomState(req.query.room, "standardOn");
-	sc.stopTimer(req.query.room);
-      	hue.clock("hour", normalize(req.query.room))
-      	.then(response => rest.respond(res, req.query.room + " lights are now on"), err => rest.respond(res, "Problem turning on " + req.query.room + " lights"));
+	onOffHelper(
+		res, 
+		req.query.room, 
+		"standardOn", 
+		"turning lights on", 
+		curryIt(hue.clock, "hour")
+	);
 });
 
 app.get('/off', (req, res) => {
-	req.query.room = req.query.room || "all";
-	sc.setRoomState(req.query.room, "off");
-	sc.stopTimer(req.query.room);
-	hue.off(req.query.room)
-	.then(
-		response => rest.respond(res, req.query.room + " lights are now off"),
-		err => rest.respond(res, "Problem turning off " + req.query.room + " lights", err)
+	onOffHelper(
+		res, 
+		req.query.room, 
+		"off", 
+		"turning lights off", 
+		hue.off
 	);
 });
 
 app.get('/toggle', (req, res) => {
-	let room = req.query.room;
-
-	if (sc.getRoomState(room) !== "off") {
-		res.redirect('off');
-	} else {
-		res.redirect('on');
-	}
+	let rooms = rest.processRooms(req.query.room);
+	let verb  = "toggling lights";
+	roomQueue = [];
+	rooms.forEach(room => {
+		if (sc.getRoomState(room) !== "off") { // Turn lights off
+			sc.prepareRoom(room, "off")
+			roomQueue.push(hue.off(room));
+		} else {
+			sc.prepareRoom(room, "standardOn")
+			roomQueue.push(hue.clock("hour", room));
+		}
+	});
+	Promise.all(roomQueue)
+	.then(
+	 	success => rest.respond(res, rest.responseMessage(rooms, verb, true)),
+	 	err => rest.respond(res, rest.responseMessage(rooms, verb, false), err)
+	);
 });
 
 app.get('/clock', (req, res) => {
@@ -100,11 +114,11 @@ app.get('/clock', (req, res) => {
 });
 
 app.get('/nightstand', (req, res) => {
-	sc.stopTimer('bedroom');
 	switch(sc.getRoomState('bedroom')) {
 		case "night":
-			sc.setRoomState('bedroom', "almostoff");
-			hue.setLightState(6, {"bri": 1})
+			sc.prepareRoom('bathroom', 'almostoff');
+			sc.prepareRoom('bedroom', 'almostoff');
+			hue.setScene("almostoff")
 			.then(
 				resposne => rest.respond(res, "almost off"),
 				err => rest.respond(res, "Error occured setting to almost off", err)
@@ -114,7 +128,8 @@ app.get('/nightstand', (req, res) => {
 			res.redirect('off');
 			break;
 		default:
-			sc.setRoomState('bedroom', "night");
+			sc.prepareRoom('bedroom', "night");
+			sc.prepareRoom('bathroom', 'night');
 			hue.setScene("night")
 			.then(
 				resposne => rest.respond(res, "set scene to night"),
@@ -128,7 +143,7 @@ app.get('/currentState', (req, res) => {
 	let bd = sc.getRoomState('bed');
 	let ba = sc.getRoomState('bath');
 	rest.respond(res, lv + " " + bd + " " + ba);
-})
+});
 
 // Catch-all for non-existent routes
 app.use('*', function(req,res) {
@@ -136,3 +151,17 @@ app.use('*', function(req,res) {
 	logger(message);
 	res.status(404).send(message);
 });
+
+var onOffHelper = function(res, rooms, roomState, verb, action) {
+	rooms = rest.processRooms(rooms);
+	roomQueue = [];
+	rooms.forEach(room => {
+		sc.prepareRoom(room, roomState)
+		roomQueue.push(action(room));
+	});
+	Promise.all(roomQueue)
+	.then(
+	 	success => rest.respond(res, rest.responseMessage(rooms, verb, true)),
+	 	err => rest.respond(res, rest.responseMessage(rooms, verb, false), err)
+	);
+}
