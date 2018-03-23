@@ -125,7 +125,14 @@ app.get('/nightstand', (req, res) => {
 			);
 			break;
 		case  "almostoff":
-			res.redirect('off');
+			sc.prepareRoom('kitchen', 'nightmode');
+			sc.prepareRoom('bedroom', 'nightmode');
+			sc.prepareRoom('living', 'nightmode');
+			hue.setScene("nightmode")
+			.then(
+				resposne => rest.respond(res, "night mode"),
+				err => rest.respond(res, "Error occured setting to night mode", err)
+			);
 			break;
 		default:
 			sc.prepareRoom('bedroom', "night");
