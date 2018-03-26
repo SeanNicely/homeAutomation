@@ -1,4 +1,5 @@
 var express = require('express');
+var chalk = require('chalk');
 var hue = require('./lib/HueApi.js');
 var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
@@ -159,16 +160,13 @@ app.use('*', function(req,res) {
 	res.status(404).send(message);
 });
 
-var onOffHelper = function(res, rooms, roomState, verb, action) {
+var onOffHelper = async function(res, rooms, roomState, verb, action) {
 	rooms = rest.processRooms(rooms);
-	roomQueue = [];
-	rooms.forEach(room => {
-		sc.prepareRoom(room, roomState)
-		roomQueue.push(action(room));
-	});
-	Promise.all(roomQueue)
-	.then(
-	 	success => rest.respond(res, rest.responseMessage(rooms, verb, true)),
-	 	err => rest.respond(res, rest.responseMessage(rooms, verb, false), err)
-	);
+	results = [];
+	for (room of rooms) {
+		let result = await action(room);
+		results.push(result);
+	}
+	if (results.length)  rest.respond(res, rest.responseMessage(rooms, verb, true))
+	else rest.respond(res, rest.responseMessage(rooms, verb, false), err);
 }
