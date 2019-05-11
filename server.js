@@ -164,6 +164,7 @@ var onOffHelper = async function(res, rooms, roomState, verb, action) {
 	rooms = rest.processRooms(rooms);
 	results = [];
 	for (room of rooms) {
+		sc.prepareRoom(room, roomState);
 		let result = await action(room);
 		results.push(result);
 	}
