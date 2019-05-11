@@ -75,19 +75,6 @@ describe("Hue Lights API", () => {
 		});
 	});
 
-	describe("Get Target Time", () => {
-		it("should return the next minute", () => {
-			expect(hue.getTargetTime).to.exist;
-		});
-
-		it("should set the start time to the next minute", () => {
-			var currentTime = new Date("October 13, 2014 11:12:13");
-			var targetTime = sinon.useFakeTimers(currentTime);
-			expect(hue.getTargetTime(currentTime)).to.deep.equal(new Date("October 13, 2014 11:13:00"))
-			targetTime.restore();
-		});
-	});
-
 	describe("Get On Status For Room", () => {
 		beforeEach(() => {
 			getCurrentState = sinon.stub(hue, "getCurrentState");

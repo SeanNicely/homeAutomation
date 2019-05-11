@@ -10,60 +10,59 @@ var normalize = require('./lib/utils.js').normalize
 	, pluralize = require('./lib/utils.js').pluralize
 	, curryIt = require('./lib/utils.js').curryIt;
 var app = express();
+app.use(express.json());
 
 app.listen(3000, () => {
 	console.log('Light Controller listening on port 3000!')
-	sc.loadRoomStatuses();
+	sc.initializeRoomStatuses();
 });
 
 app.get('/statecenter', (req, res) => {
 	var message = "";
-	message += "\n\n### Living Room ###\n" + sc.getRoomState('living') + '\n' + JSON.stringify(sc.getTimer('living'));
-	message += "\n\n### Bed Room ###\n" + sc.getRoomState('bed') + '\n' + JSON.stringify(sc.getTimer('bed'));
-	message += "\n\n### Bath Room ###\n" + sc.getRoomState('bath') + '\n' + JSON.stringify(sc.getTimer('bath'));
-	message += "\n\n### Kitchen ###\n" + sc.getRoomState('kitchen') + '\n' + JSON.stringify(sc.getTimer('kitchen'));
+	message += "\n\n### Living Room ###\n" + sc.getRoomState('living');
+	message += "\n\n### Bed Room ###\n" + sc.getRoomState('bed');
+	message += "\n\n### Bath Room ###\n" + sc.getRoomState('bath');
+	message += "\n\n### Kitchen ###\n" + sc.getRoomState('kitchen');
 
 	rest.respond(res, message);
 });
 
 // Handles setting Color Temperature, Brightness, and Saturation attributes
 app.get('/continuous', (req, res) => {
-	sc.setRoomState(req.query.room, "custom");
+	let room = normalize(req.query.room);
+	sc.prepareRoom(room, "custom");
 	let percentage = parseInt(req.query.percentage);
 
-	sc.stopTimer(req.query.room);
-
-	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room, {})]).then
+	Promise.all([mongo.getLights(room), hue.getOnStatusForRoom(room, {})]).then
 	(result => {
-		lights = result[0];
-		body = result[1];
+		let lights = result[0];
+		let body = result[1];
 		body = hue.getContinuous(req.query.attribute, req.query.percentage, body);
 		pluralize(hue.setLightState, lights, body)
 	})
 	.then(
-		response => rest.respond(res, req.query.room + " lights set to " + req.query.percentage + " " + req.query.attribute),
-		err => rest.respond(res, "Problem setting " + req.query.room + " lights to " + req.query.percentage + " " + req.query.attribute, err)
+		response => rest.respond(res, room + " lights set to " + req.query.percentage + " " + req.query.attribute),
+		err => rest.respond(res, "Problem setting " + room + " lights to " + req.query.percentage + " " + req.query.attribute, err)
 	);
 });
 
 app.get('/color', (req, res) => {
-	sc.setRoomState(req.query.room, "custom");
-	let problemString = "Problem setting " + req.query.room + " lights to " + req.query.color;
+	let room = normalize(req.query.room);
+	sc.prepareRoom(room, "custom");
+	let problemString = "Problem setting " + room + " lights to " + req.query.color;
 
-	sc.stopTimer(req.query.room);
-
-	Promise.all([mongo.getLights(req.query.room), hue.getOnStatusForRoom(req.query.room), mongo.getColorXY(req.query.color)]).then(result => {
-		lights = result[0];
-		body = {};
+	Promise.all([mongo.getLights(room), hue.getOnStatusForRoom(room), mongo.getColorXY(req.query.color)]).then(result => {
+		let lights = result[0];
+		let body = {};
 		if (result[1]) body.on = result[1].on;
 		body.xy = result[2];
 		pluralize(hue.setLightState, lights, body)
 	})
-	.then(response => rest.respond(res, req.query.room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
+	.then(response => rest.respond(res, room + " lights set to " + req.query.color), err => rest.respond(res, problemString, err));
 });
 
 app.get('/scene', (req, res) => {
-	sc.setRoomState(req.query.room, req.query.scene);
+	sc.prepareRoom(normalize(req.query.room), req.query.scene);
 	hue.setScene(req.query.scene)
 	.then(response => rest.respond(res, "Scene set to " + req.query.scene), err => rest.respond(res, "Problem setting scene to " + req.query.scene));
 });
@@ -71,7 +70,7 @@ app.get('/scene', (req, res) => {
 app.get('/on', (req, res) => {
 	onOffHelper(
 		res, 
-		req.query.room, 
+		normalize(req.query.room),
 		"standardOn", 
 		"turning lights on", 
 		curryIt(hue.clock, "hour")
@@ -81,7 +80,7 @@ app.get('/on', (req, res) => {
 app.get('/off', (req, res) => {
 	onOffHelper(
 		res, 
-		req.query.room, 
+		normalize(req.query.room),
 		"off", 
 		"turning lights off", 
 		hue.off
@@ -89,36 +88,36 @@ app.get('/off', (req, res) => {
 });
 
 app.get('/toggle', (req, res) => {
-	let rooms = rest.processRooms(req.query.room);
+	let room = normalize(req.query.room);
 	let verb  = "toggling lights";
-	roomQueue = [];
-	rooms.forEach(room => {
-		if (sc.getRoomState(room) !== "off") { // Turn lights off
-			sc.prepareRoom(room, "off")
-			roomQueue.push(hue.off(room));
-		} else {
-			sc.prepareRoom(room, "standardOn")
-			roomQueue.push(hue.clock("hour", room));
-		}
-	});
-	Promise.all(roomQueue)
-	.then(
-	 	success => rest.respond(res, rest.responseMessage(rooms, verb, true)),
-	 	err => rest.respond(res, rest.responseMessage(rooms, verb, false), err)
-	);
+	if (sc.getRoomState(room) !== "off") { // Turn lights off
+		sc.prepareRoom(room, "off")
+		hue.off(room)
+		.then(
+			success => rest.respond(res, `Success toggling lights off in the ${room} room`),
+			err => rest.respond(res, `Problem toggling lights off in the ${room} room`, err)
+		);
+	} else {
+		sc.prepareRoom(room, "standardOn")
+		hue.clock("hour", room)
+		.then(
+			success => rest.respond(res, `Success toggling lights on in the ${room} room`),
+			err => rest.respond(res, `Problem toggling lights on in the ${room} room`, err)
+		);
+	}
 });
 
 app.get('/clock', (req, res) => {
-	sc.setRoomState('living', "clock");
+	sc.prepareRoom('living', "clock");
 	hue.clock("minute")
 	.then(success => rest.respond(res, "clock started"), err => rest.respond(err));
 });
 
 app.get('/nightstand', (req, res) => {
-	switch(sc.getRoomState('bedroom')) {
+	switch(sc.getRoomState('bed')) {
 		case "night":
-			sc.prepareRoom('bathroom', 'almostoff');
-			sc.prepareRoom('bedroom', 'almostoff');
+			sc.prepareRoom('bath', 'almostoff');
+			sc.prepareRoom('bed', 'almostoff');
 			hue.setScene("almostoff")
 			.then(
 				resposne => rest.respond(res, "almost off"),
@@ -127,8 +126,9 @@ app.get('/nightstand', (req, res) => {
 			break;
 		case  "almostoff":
 			sc.prepareRoom('kitchen', 'nightmode');
-			sc.prepareRoom('bedroom', 'nightmode');
+			sc.prepareRoom('bed', 'off');
 			sc.prepareRoom('living', 'nightmode');
+			sc.prepareRoom('bath', 'nightmode');
 			hue.setScene("nightmode")
 			.then(
 				resposne => rest.respond(res, "night mode"),
@@ -153,6 +153,10 @@ app.get('/currentState', (req, res) => {
 	rest.respond(res, lv + " " + bd + " " + ba);
 });
 
+app.post('/testRoute', (req, res) => {
+	console.log(req.body.rooms);
+});
+
 // Catch-all for non-existent routes
 app.use('*', function(req,res) {
 	let message = '404 ' + req.baseUrl + " is not a valid route";
@@ -160,14 +164,9 @@ app.use('*', function(req,res) {
 	res.status(404).send(message);
 });
 
-var onOffHelper = async function(res, rooms, roomState, verb, action) {
-	rooms = rest.processRooms(rooms);
-	results = [];
-	for (room of rooms) {
-		sc.prepareRoom(room, roomState);
-		let result = await action(room);
-		results.push(result);
-	}
-	if (results.length)  rest.respond(res, rest.responseMessage(rooms, verb, true))
-	else rest.respond(res, rest.responseMessage(rooms, verb, false), err);
+var onOffHelper = async function(res, room, roomState, loggingVerb, action) {
+	sc.prepareRoom(room, roomState);
+	let result = await action(room);
+	if (result)  rest.respond(res, rest.responseMessage(room, loggingVerb, true))
+	else rest.respond(res, rest.responseMessage(room, loggingVerb, false), err);
 }
