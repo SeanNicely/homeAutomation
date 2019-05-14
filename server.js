@@ -136,8 +136,8 @@ app.get('/nightstand', (req, res) => {
 			);
 			break;
 		default:
-			sc.prepareRoom('bedroom', "night");
-			sc.prepareRoom('bathroom', 'night');
+			sc.prepareRoom('bed', "night");
+			sc.prepareRoom('bath', 'night');
 			hue.setScene("night")
 			.then(
 				resposne => rest.respond(res, "set scene to night"),
