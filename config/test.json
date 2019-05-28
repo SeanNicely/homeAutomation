@@ -1,3 +1,5 @@
 {
-	"dbUrl" : "mongodb://127.0.0.1:27017/Test"
+	"dbUrl" : "mongodb://127.0.0.1:27017/Test",
+	"apiKey" : "f599bf94b723f4144d609bc8078068ab",
+	"token" : "8caeebb86ee79a0290e9a9a3bf462b11d5b90075c5c5e0641aeb1758cd8a509a"
 }
