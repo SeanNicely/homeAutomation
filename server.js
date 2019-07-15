@@ -153,6 +153,10 @@ app.get('/currentState', (req, res) => {
 	rest.respond(res, lv + " " + bd + " " + ba);
 });
 
+app.post('/inventory', (req, res) => {
+	console.log(req.body);
+});
+
 // Catch-all for non-existent routes
 app.use('*', function(req,res) {
 	let message = '404 ' + req.baseUrl + " is not a valid route";
