@@ -4,6 +4,7 @@ var hue = require('./lib/HueApi.js');
 var sc = require('./lib/stateCenter.js');
 var rest = require('./lib/restApi.js');
 var mongo = require('./lib/mongoApi.js');
+var maryService = require('./lib/maryService.js');
 var schedules = require('./lib/schedules.js');
 var normalize = require('./lib/utils.js').normalize
 	, logger = require('./lib/utils.js').logger
@@ -154,7 +155,17 @@ app.get('/currentState', (req, res) => {
 });
 
 app.post('/inventory', (req, res) => {
-	console.log(req.body);
+	mongo.insert("Inventory", "Inventory", req.body)
+        .then(response => rest.respond(res));
+});
+
+app.get('/mary', (req, res) => {
+	let dateIdeas = maryService.getDates()
+		.then(data => {
+			rest.respond(res, data);
+		}, err => {
+			rest.respond(res, err);
+		});
 });
 
 // Catch-all for non-existent routes
