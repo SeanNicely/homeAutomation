@@ -159,13 +159,18 @@ app.post('/inventory', (req, res) => {
         .then(response => rest.respond(res));
 });
 
-app.get('/mary', (req, res) => {
+app.get('/dateIdeas', (req, res) => {
 	let dateIdeas = maryService.getDates()
 		.then(data => {
 			rest.respond(res, data);
 		}, err => {
 			rest.respond(res, err);
 		});
+});
+
+app.post('/dateIdeas', (req, res) => {
+	mongo.insert("Mary", "dateIdeas", req.body)
+		.then(response => rest.respond(res));
 });
 
 // Catch-all for non-existent routes
