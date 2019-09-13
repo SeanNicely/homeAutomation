@@ -33,7 +33,7 @@ class App extends Component {
         }
 
         return body.map(idea =>
-            <div className="card" style={{width:'18rem'}} key={idea.name}>
+            <div className="col-lg-3 col-md-3 col-sm-3 col-xs-12 card" key={idea.name}>
                 <div className="card-body">
                     <h5 className="card-title">{idea.name}</h5>
                     <p className="card-text">{idea.address}</p>
@@ -43,7 +43,6 @@ class App extends Component {
     };
 
     toggleModal = ()=> {
-        console.log("helloWorld");
         this.setState({addDateModal: !this.state.addDateModal,});
     }
 
@@ -51,8 +50,8 @@ class App extends Component {
         return (<div className="App">
             <div className="container">
                 <div className="row">
-                        <div class="col-lg">
-                            <button type="button" className="btn btn-primary" onClick={this.toggleModal}>Primary</button>
+                        <div className="col-lg">
+                            <button type="button" className="btn btn-primary" onClick={this.toggleModal}>Add New Idea</button>
                             {
                                 this.state.addDateModal ?
                                     <Modal
@@ -60,18 +59,10 @@ class App extends Component {
                                         onClickBackdrop={this.toggleModal}
                                     >
                                         <div className="modal-header">
-                                            <h5 className="modal-title">Red Alert!</h5>
+                                            <h5 className="modal-title">Add Date Idea</h5>
                                         </div>
                                         <div className="modal-body">
                                             <NewDateForm/>
-                                        </div>
-                                        <div className="modal-footer">
-                                            <button type="button" className="btn btn-secondary">
-                                                Panic
-                                            </button>
-                                            <button type="button" className="btn btn-primary" onClick={this.toggleModal}>
-                                                Fire phasers
-                                            </button>
                                         </div>
                                     </Modal>
                                     :
